@@ -3,6 +3,7 @@
 import { neon } from "@neondatabase/serverless";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
+import { progressPath, type Progress } from "./progress";
 
 export type ParticipantState = {
   status: "idle" | "error";
@@ -35,6 +36,7 @@ export async function saveParticipant(
   }
 
   let participantId: string | undefined;
+  let progress: Progress = "consent-form";
   try {
     const databaseUrl = process.env.DATABASE_URL;
     if (!databaseUrl) throw new Error("DATABASE_URL is missing");
@@ -43,23 +45,24 @@ export async function saveParticipant(
       sql`SELECT pg_advisory_xact_lock(hashtextextended(${npm}, 0))`,
       sql`
         WITH existing AS (
-          SELECT id, email
+          SELECT id, email, progress
           FROM participants
           WHERE student_number = ${npm}
         ), registered AS (
           INSERT INTO participants (full_name, student_number, email)
           SELECT ${namaLengkap}, ${npm}, ${email}
           WHERE NOT EXISTS (SELECT 1 FROM existing)
-          RETURNING id
+          RETURNING id, progress
         )
-        SELECT id FROM existing WHERE LOWER(BTRIM(email)) = LOWER(${email})
+        SELECT id, progress FROM existing WHERE LOWER(BTRIM(email)) = LOWER(${email})
         UNION ALL
-        SELECT id FROM registered
+        SELECT id, progress FROM registered
         ORDER BY id
         LIMIT 1
       `,
     ]);
     participantId = participants[0]?.id;
+    progress = participants[0]?.progress ?? progress;
   } catch {
     console.error("Failed to save participant to Postgres");
     return {
@@ -83,5 +86,5 @@ export async function saveParticipant(
     secure: process.env.NODE_ENV === "production",
     path: "/",
   });
-  redirect("/consent-form");
+  redirect(progressPath(progress));
 }

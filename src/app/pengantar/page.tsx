@@ -1,3 +1,5 @@
-export default function Pengantar() {
-  return null;
+﻿import FlowStep from "../flow-step";
+
+export default function Page() {
+  return <FlowStep step="pengantar" title="Pengantar" />;
 }

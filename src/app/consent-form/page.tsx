@@ -1,3 +1,5 @@
-export default function ConsentForm() {
-  return null;
+﻿import FlowStep from "../flow-step";
+
+export default function Page() {
+  return <FlowStep step="consent-form" title="Persetujuan" />;
 }
