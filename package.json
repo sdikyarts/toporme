@@ -6,9 +6,13 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
+    "db:migrate": "node --env-file-if-exists=.env --env-file-if-exists=.env.local scripts/migrate.mjs",
     "lint": "eslint"
   },
   "dependencies": {
+    "@neon/config": "^1.14.6",
+    "@neon/env": "^2.1.9",
+    "@neondatabase/serverless": "^1.2.1",
     "next": "16.4.6",
     "react": "19.3.0",
     "react-dom": "19.3.0"

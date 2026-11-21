@@ -1,12 +1,255 @@
-﻿@import "tailwindcss";
+@import "tailwindcss";
 
-@theme {
-  --font-sans: "SF Pro Rounded", ui-rounded, system-ui, sans-serif;
+@font-face {
+  font-family: "SF Pro Rounded";
+  src: url("/fonts/SF-Pro-Rounded-Ultralight.otf") format("opentype");
+  font-weight: 100;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "SF Pro Rounded";
+  src: url("/fonts/SF-Pro-Rounded-Thin.otf") format("opentype");
+  font-weight: 200;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "SF Pro Rounded";
+  src: url("/fonts/SF-Pro-Rounded-Light.otf") format("opentype");
+  font-weight: 300;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "SF Pro Rounded";
+  src: url("/fonts/SF-Pro-Rounded-Regular.otf") format("opentype");
+  font-weight: 400;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "SF Pro Rounded";
+  src: url("/fonts/SF-Pro-Rounded-Medium.otf") format("opentype");
+  font-weight: 500;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "SF Pro Rounded";
+  src: url("/fonts/SF-Pro-Rounded-Semibold.otf") format("opentype");
+  font-weight: 600;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "SF Pro Rounded";
+  src: url("/fonts/SF-Pro-Rounded-Bold.otf") format("opentype");
+  font-weight: 700;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "SF Pro Rounded";
+  src: url("/fonts/SF-Pro-Rounded-Heavy.otf") format("opentype");
+  font-weight: 800;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "SF Pro Rounded";
+  src: url("/fonts/SF-Pro-Rounded-Black.otf") format("opentype");
+  font-weight: 900;
+  font-display: swap;
+}
+
+:root {
+  --page-padding: 75px;
+  /* Fonts */
+    --font-primary: "SF Pro Rounded", ui-rounded, system-ui, sans-serif;
+
+  /* Font Weight */
+    /* --font-weight-semibold: 600;
+    --font-weight-bold: 700;
+    --font-weight-extrabold: 800; */
+
+  /* Colors */
+    --color-tailwind-slate-50: #f8fafc;
+    --color-tailwind-slate-200: #e2e8f0;
+    --color-tailwind-slate-300: #cbd5e1;
+    --color-tailwind-slate-400: #94a3b8;
+    --color-tailwind-slate-500: #64748b;
+    --color-tailwind-slate-700: #334155;
+    --color-tailwind-slate-900: #0f172a;
+    --color-tailwind-slate-950: #020617;
+
+    --color-tailwind-blue-500: #3b82f6;
+    --color-tailwind-blue-700: #1d4ed8;
+    --color-tailwind-blue-900: #1c398e;
+
+
 }
 
 body {
-  margin: 0;
-  padding: 75px;
-  font-family: var(--font-sans);
+  font-family: var(--font-primary);
   font-weight: 600;
+  padding: var(--page-padding);
+  padding-block: var(--page-padding-block, var(--page-padding));
+  flex-direction: column;
+  align-items: flex-start;
+  background-color: var(--color-tailwind-slate-300);
+}
+
+.login-container {
+  display: grid;
+  place-items: center;
+  min-height: calc(100dvh - var(--page-padding-block, var(--page-padding)) * 2);
+}
+
+.login-card {
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  flex-direction: column;
+  width: 540px;
+  padding: 48px;
+  gap: 48px;
+  border-radius: 16px;
+  background-color: var(--color-tailwind-slate-50);
+}
+
+.login-app-name-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
+  gap: 8px;
+}
+
+.login-app-name-container h1 {
+  margin: 0;
+  line-height: 1;
+  font-family: var(--font-primary);
+  font-weight: 700;
+  font-size: 24px;
+}
+
+.login-app-logo {
+  display: flex;
+  align-items: center;
+}
+
+.login-app-logo h1 {
+  margin: 0;
+  line-height: 1;
+  font-family: var(--font-primary);
+  font-weight: 800;
+  font-size: 72px;
+}
+
+.login-app-logo .text-top {
+  color: var(--color-tailwind-blue-500);
+}
+
+.login-app-logo .text-o {
+  color: var(--color-tailwind-blue-700);
+}
+
+.login-app-logo .text-rme {
+  color: var(--color-tailwind-blue-900);
+}
+
+.login-form {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 48px;
+}
+
+.login-fields {
+  display: flex;
+  flex-direction: column;
+  gap: 36px;
+}
+
+.login-field {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 8px;
+}
+
+.login-field label {
+  color: var(--color-tailwind-slate-700);
+  font-family: var(--font-primary);
+  font-size: 18px;
+  font-weight: 700;
+  line-height: 28px;
+}
+
+.login-field input {
+  display: flex;
+  width: 444px;
+  padding: 14px;
+  border-radius: 8px;
+  background: var(--Tailwind-Slate-200, #E2E8F0);
+  align-items: center;
+  gap: 10px;
+  font-size: 18px;
+  color: var(--color-tailwind-slate-950);
+}
+
+.login-field input:placeholder {
+  color: var(--color-tailwind-slate-500);
+}
+
+.login-form input:focus {
+  outline: 4px solid var(--color-tailwind-blue-500);
+}
+
+.login-button {
+  display: flex;
+  width: 100%;
+  padding: 16px;
+  justify-content: center;
+  align-items: center;
+  border-radius: 8px;
+  background-color: var(--color-tailwind-slate-900);
+  transition: background-color 180ms ease;
+  color: var(--color-tailwind-slate-50);
+  font-size: 18px;
+  font-weight: 800;
+  line-height: 28px;
+}
+
+.login-button:enabled:hover,
+a.login-button:hover {
+  cursor: pointer;
+  background-color: var(--color-tailwind-blue-500);
+}
+
+.login-button:disabled {
+  background-color: var(--color-tailwind-slate-500);
+  color: var(--color-tailwind-slate-300);
+}
+
+@media (max-height: 850px) {
+  body:has(.login-container) {
+    --page-padding-block: 16px;
+  }
+}
+
+@media (max-height: 720px) {
+  .login-card {
+    padding-block: 24px;
+    gap: 24px;
+  }
+
+  .login-form {
+    gap: 24px;
+  }
+
+  .login-fields {
+    gap: 16px;
+  }
 }
