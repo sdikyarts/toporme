@@ -7,8 +7,9 @@ export async function advanceProgress(expected: Progress, formData: FormData) {
   const id = await participantSessionId();
   if (!id) redirect("/");
   if (!Object.hasOwn(nextProgress, expected)) redirect("/");
-  if (expected === "consent-form" && formData.get("consent") !== "yes") {
-    redirect("/consent-form");
+  if (expected === "consent-form") {
+    const consent = formData.get("consent");
+    if (consent !== "yes" && consent !== "no") redirect("/consent-form");
   }
   if (expected === "sus-form" || expected === "mls-form") {
     // Connect survey storage here before enabling these transitions.

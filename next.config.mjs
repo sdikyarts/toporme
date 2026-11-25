@@ -1,7 +1,9 @@
-import type { NextConfig } from "next";
-
-const nextConfig: NextConfig = {
-  /* config options here */
+/** @type {import("next").NextConfig} */
+const nextConfig = {
+  experimental: {
+    // Avoid persistent dev cache writes on slow Windows filesystems.
+    turbopackFileSystemCacheForDev: process.platform !== "win32",
+  },
   cacheComponents: true,
   partialPrefetching: true,
   reactCompiler: true,
