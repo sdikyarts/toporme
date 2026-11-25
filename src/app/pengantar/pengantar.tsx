@@ -29,8 +29,14 @@ export default function Pengantar({ progress }: { progress: Progress }) {
                         <ChapterTitle />
                     </div>
                     <div className="page-footer">
-                        <button type="button" className="chapter-button" disabled>Prev</button>
-                        <button type="button" className="chapter-button" disabled>Next</button>
+                        <button type="button" className="chapter-button" disabled>
+                            <span className="chapter-chevron chapter-chevron-left" aria-hidden="true" />
+                            Prev
+                        </button>
+                        <button type="button" className="chapter-button" disabled>
+                            Next
+                            <span className="chapter-chevron" aria-hidden="true" />
+                        </button>
                     </div>
                 </div>
             </div>
