@@ -103,7 +103,7 @@ export default function LoginForm() {
               </>
             ) : (
               <button type="submit" className="login-button" disabled>
-                {pending ? "Menyimpan…" : "Masuk"}
+                Masuk
               </button>
             )}
           </form>

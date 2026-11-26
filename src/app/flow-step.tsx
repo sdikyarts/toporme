@@ -1,6 +1,9 @@
 import { Suspense, type ReactNode } from "react";
 import { redirect } from "next/navigation";
-import { advanceProgress } from "./progress-action";
+import ChapterLayout, { chapterProgressForm } from "./chapter-layout";
+import ChapterNavigation from "./chapter-navigation";
+import ChapterTitle from "./pengantar/chapter-title";
+import { advanceProgress, returnToPreviousChapter } from "./progress-action";
 import ProgressButton from "./progress-button";
 import { getParticipantProgress, progressPath, type Progress } from "./progress";
 
@@ -20,6 +23,29 @@ async function CurrentStep({ step, title, children }: StepProps) {
 
   if (step === "consent-form" || step === "sus-form" || step === "mls-form") return null;
 
+  if (step === "latihan") {
+    return (
+      <ChapterLayout
+        progress={progress}
+        percent={0}
+        navigation={
+          <>
+            <form id="previous-chapter" action={returnToPreviousChapter.bind(null, progress)} hidden />
+            <ChapterNavigation
+              isFirstPage={false}
+              prevForm="previous-chapter"
+              nextForm={chapterProgressForm}
+            />
+          </>
+        }
+      >
+        <div className="chapter-panel">
+          <ChapterTitle />
+        </div>
+      </ChapterLayout>
+    );
+  }
+
   return (
     <main className="login-container">
       <section className="login-card">
@@ -35,15 +61,12 @@ async function CurrentStep({ step, title, children }: StepProps) {
 }
 
 export default function FlowStep(props: StepProps) {
+  if (props.step === "pengantar" || props.step === "tutorial" || props.step === "latihan") {
+    return <CurrentStep {...props} />;
+  }
+
   return (
-    <Suspense fallback={
-      <main className="login-container">
-        <section className="login-card">
-          <h1>{props.title}</h1>
-          <p role="status">Memuat…</p>
-        </section>
-      </main>
-    }>
+    <Suspense fallback={null}>
       <CurrentStep {...props} />
     </Suspense>
   );

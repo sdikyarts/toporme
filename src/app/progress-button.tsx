@@ -13,7 +13,7 @@ export default function ProgressButton({ className, children, disabled }: Progre
 
   return (
     <button type="submit" className={className} disabled={disabled || pending}>
-      {pending ? "Menyimpan…" : children}
+      {children}
     </button>
   );
 }

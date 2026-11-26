@@ -1,15 +1,13 @@
+import { PHASE_DEVELOPMENT_SERVER } from "next/constants.js";
+
 /** @type {import("next").NextConfig} */
 const nextConfig = {
-  experimental: {
-    // Avoid persistent dev cache writes on slow Windows filesystems.
-    turbopackFileSystemCacheForDev: process.platform !== "win32",
-  },
   cacheComponents: true,
   partialPrefetching: true,
   reactCompiler: true,
   turbopack: {
     rules: {
-      "*.css": {
+      "*.tailwind.css": {
         loaders: ["@tailwindcss/turbopack"],
         as: "*.css",
       },
@@ -17,4 +15,18 @@ const nextConfig = {
   },
 };
 
-export default nextConfig;
+export default function config(phase) {
+  if (phase !== PHASE_DEVELOPMENT_SERVER) return nextConfig;
+
+  return {
+    ...nextConfig,
+    reactCompiler: false,
+    ...(process.platform === "win32" && {
+      // Windows file events can miss saves made through an atomic rename.
+      watchOptions: { pollIntervalMs: 1000 },
+    }),
+    experimental: {
+      turbopackFileSystemCacheForDev: process.platform !== "win32",
+    },
+  };
+}
