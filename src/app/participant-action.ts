@@ -45,7 +45,7 @@ export async function saveParticipant(
       sql`SELECT pg_advisory_xact_lock(hashtextextended(${npm}, 0))`,
       sql`
         WITH existing AS (
-          SELECT id, email, progress
+          SELECT id, email, COALESCE(last_visited_step, progress) AS progress
           FROM participants
           WHERE student_number = ${npm}
         ), registered AS (

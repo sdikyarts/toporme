@@ -1,6 +1,6 @@
 import Image from "next/image";
 
-export default function Definisi({ active }: { active?: boolean }) {
+export default function Definisi({ active, showIllustration = true }: { active?: boolean; showIllustration?: boolean }) {
     return (
         <div className="subchapter-content">
             <div className="subchapter-text">
@@ -21,16 +21,18 @@ export default function Definisi({ active }: { active?: boolean }) {
                     </li>
                 </ul>
             </div>
-            <div className="subchapter-visual">
-                <Image
-                    src="/definisi-foto.png"
-                    loading={active ? "eager" : "lazy"}
-                    alt="Ilustrasi topological sort"
-                    width={1628}
-                    height={809}
-                />
-                <p>Sumber: https://ecealgo.com/img/lectures/Lec16/Top.png</p>
-            </div>
+            {showIllustration && (
+                <div className="subchapter-visual">
+                    <Image
+                        src="/definisi-foto.png"
+                        loading={active ? "eager" : "lazy"}
+                        alt="Ilustrasi topological sort"
+                        width={1628}
+                        height={809}
+                    />
+                    <p>Sumber: https://ecealgo.com/img/lectures/Lec16/Top.png</p>
+                </div>
+            )}
         </div>
     );
 }

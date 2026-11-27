@@ -3,13 +3,14 @@ type ChapterNavigationProps = {
   prevForm?: string;
   prevLabel?: string;
   nextForm?: string;
+  nextDisabled?: boolean;
   nextLabel?: string;
   nextAccent?: boolean;
   onPrev?: () => void;
   onNext?: () => void;
 };
 
-export default function ChapterNavigation({ isFirstPage, prevForm, prevLabel = "Prev", nextForm, nextLabel = "Next", nextAccent, onPrev, onNext }: ChapterNavigationProps) {
+export default function ChapterNavigation({ isFirstPage, prevForm, prevLabel = "Prev", nextForm, nextDisabled, nextLabel = "Next", nextAccent, onPrev, onNext }: ChapterNavigationProps) {
   return (
     <div className="page-footer">
         <button type={prevForm ? "submit" : "button"} form={prevForm} className="chapter-button" disabled={isFirstPage} onClick={onPrev}>
@@ -26,7 +27,7 @@ export default function ChapterNavigation({ isFirstPage, prevForm, prevLabel = "
             {prevLabel}
         </button>
         <p>© 2026 TopORME. All Rights Reserved.</p>
-        <button type={nextForm ? "submit" : "button"} form={nextForm} className={nextAccent ? "chapter-button chapter-button-accent" : "chapter-button"} onClick={onNext}>
+        <button type={nextForm ? "submit" : "button"} form={nextForm} disabled={nextDisabled} className={nextAccent ? "chapter-button chapter-button-accent" : "chapter-button"} onClick={onNext}>
             {nextLabel}
             <svg className="chapter-chevron" width="20" height="20" viewBox="0 0 20 20" aria-hidden="true">
                 <path

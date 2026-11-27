@@ -1,8 +1,14 @@
 import FlowStep from "../../flow-step";
-import Pengantar from "../../pengantar/pengantar";
+import ChapterFlow from "../chapter-flow";
+import { tutorialPanelName, tutorialStageFromParam } from "./tutorial-flow";
 
-export default function Page() {
+export default async function Page({ searchParams }: PageProps<"/tutorial">) {
+  const { panel, stage } = await searchParams;
+  const openWorksheet = panel === tutorialPanelName;
+  const initialTutorialStage = openWorksheet && typeof stage === "string" ? tutorialStageFromParam(stage) : 0;
+
   return <FlowStep step="tutorial" title="Tutorial">
-    {(progress) => <Pengantar progress={progress} />}
+    {(progress) => <ChapterFlow key={openWorksheet ? `tutorial-${initialTutorialStage}` : "tutorial-title"} progress={progress}
+      initialTutorialStage={openWorksheet ? initialTutorialStage : undefined} />}
   </FlowStep>;
 }

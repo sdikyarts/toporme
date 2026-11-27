@@ -18,7 +18,7 @@ export default function ProgressBar({ percent, label }: ProgressBarProps) {
       <div className="progress-bar-bar">
         <div className="progress-bar-fill" style={{ width: `${value}%` }} />
       </div>
-      <div className="progress-bar-text">{`${value}%`}</div>
+      <div className="progress-bar-text">{Math.round(value)}%</div>
     </div>
   );
 }

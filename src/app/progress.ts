@@ -15,9 +15,31 @@ export const nextProgress = {
 } as const;
 
 export type Progress = keyof typeof nextProgress;
+export type Step = Exclude<Progress, `replay-${string}`>;
+
+const steps = ["consent-form", "pengantar", "tutorial", "latihan", "sus-form", "mls-form", "thank-you"] as const;
+
+export function progressStep(progress: Progress): Step {
+  return progress.replace(/^replay-/, "") as Step;
+}
+
+export function unlockedProgress(progress: Progress, step: Step): Progress | null {
+  const index = steps.indexOf(step);
+  if (index === -1) return null;
+
+  if (!progress.startsWith("replay-")) {
+    return index <= steps.indexOf(progressStep(progress)) ? step : null;
+  }
+
+  const replay = `replay-${step}`;
+  if (Object.hasOwn(nextProgress, replay) && index <= steps.indexOf(progressStep(progress))) {
+    return replay as Progress;
+  }
+  return step;
+}
 
 export function progressPath(progress: Progress) {
-  return "/" + progress.replace(/^replay-/, "");
+  return "/" + progressStep(progress);
 }
 
 export async function participantSessionId() {
@@ -31,10 +53,18 @@ export function progressDatabase() {
   return neon(url);
 }
 
-export async function getParticipantProgress() {
+export async function getParticipantPosition() {
   const id = await participantSessionId();
   if (!id) return null;
   const sql = progressDatabase();
-  const [participant] = await sql`SELECT progress FROM participants WHERE id = ${id}`;
-  return (participant?.progress as Progress | undefined) ?? null;
+  const [participant] = await sql`
+    SELECT progress, COALESCE(last_visited_step, progress) AS last_visited
+    FROM participants WHERE id = ${id}
+  `;
+  if (!participant) return null;
+  return { progress: participant.progress as Progress, lastVisited: participant.last_visited as Progress };
+}
+
+export async function getParticipantProgress() {
+  return (await getParticipantPosition())?.lastVisited ?? null;
 }

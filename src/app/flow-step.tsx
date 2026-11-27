@@ -1,50 +1,35 @@
 import { Suspense, type ReactNode } from "react";
 import { redirect } from "next/navigation";
-import ChapterLayout, { chapterProgressForm } from "./chapter-layout";
-import ChapterNavigation from "./chapter-navigation";
-import ChapterTitle from "./pengantar/chapter-title";
-import { advanceProgress, returnToPreviousChapter } from "./progress-action";
+import { advanceProgress } from "./progress-action";
 import ProgressButton from "./progress-button";
-import { getParticipantProgress, progressPath, type Progress } from "./progress";
+import { getParticipantPosition, progressPath, unlockedProgress, type Progress, type Step } from "./progress";
+import StepVisit from "./step-visit";
 
 type StepProps = {
-  step: Exclude<Progress, `replay-${string}`>;
+  step: Step;
   title: string;
   children?: ReactNode | ((progress: Progress) => ReactNode);
 };
 
 async function CurrentStep({ step, title, children }: StepProps) {
-  const progress = await getParticipantProgress();
-  if (!progress) redirect("/");
-  if (progressPath(progress) !== progressPath(step)) redirect(progressPath(progress));
+  const position = await getParticipantPosition();
+  if (!position) redirect("/");
+  const progress = unlockedProgress(position.progress, step);
+  if (!progress) redirect(progressPath(position.lastVisited));
 
+  return (
+    <>
+      <StepVisit step={step} />
+      <StepContent step={step} title={title} progress={progress}>{children}</StepContent>
+    </>
+  );
+}
+
+function StepContent({ step, title, children, progress }: StepProps & { progress: Progress }) {
   if (typeof children === "function") return children(progress);
   if (children !== undefined) return children;
 
   if (step === "consent-form" || step === "sus-form" || step === "mls-form") return null;
-
-  if (step === "latihan") {
-    return (
-      <ChapterLayout
-        progress={progress}
-        percent={0}
-        navigation={
-          <>
-            <form id="previous-chapter" action={returnToPreviousChapter.bind(null, progress)} hidden />
-            <ChapterNavigation
-              isFirstPage={false}
-              prevForm="previous-chapter"
-              nextForm={chapterProgressForm}
-            />
-          </>
-        }
-      >
-        <div className="chapter-panel">
-          <ChapterTitle />
-        </div>
-      </ChapterLayout>
-    );
-  }
 
   return (
     <main className="login-container">
@@ -61,10 +46,6 @@ async function CurrentStep({ step, title, children }: StepProps) {
 }
 
 export default function FlowStep(props: StepProps) {
-  if (props.step === "pengantar" || props.step === "tutorial" || props.step === "latihan") {
-    return <CurrentStep {...props} />;
-  }
-
   return (
     <Suspense fallback={null}>
       <CurrentStep {...props} />

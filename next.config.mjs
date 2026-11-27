@@ -21,8 +21,7 @@ export default function config(phase) {
   return {
     ...nextConfig,
     reactCompiler: false,
-    ...(process.platform === "win32" && {
-      // Windows file events can miss saves made through an atomic rename.
+    ...(process.env.TOPORME_WATCH_POLLING === "1" && {
       watchOptions: { pollIntervalMs: 1000 },
     }),
     experimental: {

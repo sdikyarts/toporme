@@ -1,6 +1,6 @@
 import Image from "next/image";
 
-export default function Langkah({ active }: { active?: boolean }) {
+export default function Langkah({ active, showIllustration = true }: { active?: boolean; showIllustration?: boolean }) {
     return (
         <div className="subchapter-content">
             <div className="subchapter-text">
@@ -17,16 +17,18 @@ export default function Langkah({ active }: { active?: boolean }) {
                     Jika <b>beberapa node memiliki in-degree 0</b> dalam suatu DAG, <b>salah satu</b> dari beberapa simpul tersebut <b>boleh dipilih terlebih dahulu</b>, sehingga DAG tersebut <b>memiliki lebih dari satu urutan</b> topological sort.
                 </p>
             </div>
-            <div className="subchapter-visual">
-                <Image
-                    src="/langkah-foto.png"
-                    loading={active ? "eager" : "lazy"}
-                    alt="Ilustrasi topological sort"
-                    width={1628}
-                    height={964}
-                />
-                <p>Sumber: https://assets.leetcode.com/users/images/53a3192e-3b39-4003-ab02-ce9299d1e854_1613794475.1125915.png</p>
-            </div>
+            {showIllustration && (
+                <div className="subchapter-visual">
+                    <Image
+                        src="/langkah-foto.png"
+                        loading={active ? "eager" : "lazy"}
+                        alt="Ilustrasi topological sort"
+                        width={1628}
+                        height={964}
+                    />
+                    <p>Sumber: https://assets.leetcode.com/users/images/53a3192e-3b39-4003-ab02-ce9299d1e854_1613794475.1125915.png</p>
+                </div>
+            )}
         </div>
     );
 }
