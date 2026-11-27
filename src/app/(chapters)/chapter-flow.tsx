@@ -45,6 +45,12 @@ export default function ChapterFlow({ progress: initialProgress, initialTutorial
     const isTutorialComplete = isTutorialPanel && tutorialStage === tutorialLastStage;
     const isSusContinuation = latihan.canContinue && progress === "latihan";
 
+    const chapterTitle = isLatihan ? latihanTitle : isTutorial ? tutorialTitle : "Pengantar Topological Sort";
+
+    useEffect(() => {
+        document.title = `${chapterTitle} | TopORME`;
+    }, [chapterTitle]);
+
     useEffect(() => {
         if (!isTutorialComplete) return;
         const timer = window.setTimeout(() => setContinuationReady(true), 500);
@@ -113,6 +119,7 @@ export default function ChapterFlow({ progress: initialProgress, initialTutorial
         if (index === 0) url.searchParams.delete("panel");
         else url.searchParams.set("panel", isLatihan ? latihanPanelName : isTutorial ? tutorialPanelName : panelNames[index]);
         window.history.replaceState(null, "", `${url.pathname}${url.search}${url.hash}`);
+        window.scrollTo({ top: 0, behavior: "instant" });
     }
 
     function goNext() {
@@ -175,6 +182,7 @@ export default function ChapterFlow({ progress: initialProgress, initialTutorial
                 return;
             }
             window.history.pushState(null, "", path);
+            window.scrollTo({ top: 0, behavior: "instant" });
             setPlaying(false);
             setContinuationReady(false);
             if (path === tutorialCompletionPath) setTutorialStage(tutorialLastStage);
@@ -194,7 +202,7 @@ export default function ChapterFlow({ progress: initialProgress, initialTutorial
         <ChapterLayout
             progress={progress}
             percent={isLatihan ? latihan.percent : isTutorial ? (tutorialStage / tutorialLastStage) * 100 : (pageIndex / lastPageIndex) * 100}
-            title={isLatihan ? latihanTitle : isTutorial ? tutorialTitle : undefined}
+            title={chapterTitle}
             skipDisabled={isLatihan || (!isTutorial && isLastPage)}
             onSkip={(event) => {
                 event.preventDefault();

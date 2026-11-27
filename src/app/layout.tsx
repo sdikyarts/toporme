@@ -2,6 +2,10 @@ import Script from "next/script";
 import "./utilities.tailwind.css";
 import "./globals.css";
 
+export const metadata = {
+  title: { default: "TopORME", template: "%s | TopORME" },
+};
+
 const roundedFonts = [
   { weight: 600, url: "/fonts/SF-Pro-Rounded-Semibold.woff2" },
   { weight: 700, url: "/fonts/SF-Pro-Rounded-Bold.woff2" },

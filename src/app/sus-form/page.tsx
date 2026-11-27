@@ -1,6 +1,8 @@
 import FlowStep from "../flow-step";
 import Questionnaire from "../questionnaire";
 
+export const metadata = { title: "Kuesioner SUS" };
+
 const statements = [
   "Saya ingin menggunakan sistem ini lagi.",
   "Menurut saya, penggunaan sistem ini terasa rumit.",
@@ -17,13 +19,13 @@ const statements = [
 export default function Page() {
   return (
     <FlowStep step="sus-form" title="Kuesioner SUS">
-      <Questionnaire
+      {() => <Questionnaire
         idPrefix="sus"
         lang="id"
         title="Kuesioner System Usability Scale (SUS)"
         instructions="Berdasarkan pengalaman Anda menggunakan TopORME, pilih satu jawaban untuk setiap pernyataan."
         statements={statements}
-      />
+      />}
     </FlowStep>
   );
 }

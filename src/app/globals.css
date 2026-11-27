@@ -41,7 +41,7 @@
 }
 
 :root {
-  --page-padding: 48px;
+  --page-padding: clamp(8px, 3.35vw, 48px);
   --sorting-radius: 8px;
   /* Fonts */
     --font-primary: "SF Pro Rounded", Arial, sans-serif;
@@ -71,7 +71,7 @@
 body {
   font-family: var(--font-primary);
   font-weight: 600;
-  padding: var(--page-padding);
+  padding: var(--page-padding-block, var(--page-padding)) var(--page-padding);
   flex-direction: column;
   align-items: center;
   width: 100%;
@@ -250,9 +250,17 @@ a.login-button:hover {
   background: var(--color-tailwind-slate-50);
 }
 
+.consent-container {
+  max-width: 1120px;
+  margin-inline: auto;
+  overflow-wrap: anywhere;
+}
+
 .pengantar-container {
+  max-width: 1760px;
+  margin-inline: auto;
   padding: clamp(16px, 3vw, 32px);
-  height: calc(100dvh - var(--page-padding) * 2);
+  height: calc(100dvh - var(--page-padding-block, var(--page-padding)) * 2);
 }
 
 .consent-container h1 {
@@ -1318,6 +1326,7 @@ a.consent-form-button:hover {
 }
 
 .graph-container {
+  container: worksheet-graph / inline-size;
   position: relative;
   display: flex;
   flex-direction: column;
@@ -1497,6 +1506,36 @@ a.consent-form-button:hover {
   }
 }
 
+.graph-viewport {
+  display: flex;
+  flex: 1 1 0;
+  min-height: 0;
+  width: 100%;
+  overflow: auto;
+}
+
+.graph-viewport:focus-visible {
+  outline: 2px solid var(--color-tailwind-blue-700);
+  outline-offset: -2px;
+}
+
+.practice-graph-scroll-hint {
+  display: none;
+  margin: 0 0 4px;
+  color: var(--color-tailwind-slate-600);
+  font-size: 14px;
+}
+
+.graph-viewport[data-practice="true"] .graph-content {
+  min-width: 570px;
+}
+
+@container worksheet-graph (width < 570px) {
+  .practice-graph-scroll-hint {
+    display: block;
+  }
+}
+
 .graph-content {
   container-type: size;
   display: flex;
@@ -1647,7 +1686,7 @@ a.consent-form-button:hover {
 
 .topological-sort-graph-v1 {
   --graph-line-scale: min(1, tan(atan2(100cqw, 392px)), tan(atan2(100cqh, 403px)));
-  --graph-fit-scale: calc(0.94 * min(1.15, tan(atan2(100cqw, 352px)), tan(atan2(100cqh, 332px))));
+  --graph-fit-scale: min(1.08, tan(atan2(100cqw, 424px)), tan(atan2(100cqh, 412px)));
   --graph-base-scale: calc(0.95 * var(--graph-fit-scale));
   --graph-enlargement: 1.08;
   --graph-scale: calc(var(--graph-base-scale) * var(--graph-enlargement));
@@ -1938,4 +1977,235 @@ a.consent-form-button:hover {
 
 .thank-you-card form {
   max-width: 320px;
+}
+
+@media (max-width: 1050px), (max-height: 760px) {
+  body:has(.pengantar-container) {
+    --page-padding-block: clamp(8px, 2.5vh, 24px);
+  }
+
+  .pengantar-container {
+    height: auto;
+    min-height: calc(100dvh - var(--page-padding-block) * 2);
+    padding: clamp(10px, 2.5vw, 24px);
+  }
+
+  .content-container {
+    gap: clamp(12px, 2.5vw, 24px);
+  }
+
+  .page-content {
+    position: relative;
+    grid-template-rows: auto;
+    min-height: clamp(185px, 38dvh, 420px);
+    padding: clamp(8px, 2.5vw, 24px);
+  }
+
+  .chapter-panel[inert] {
+    position: absolute;
+    inset: 0;
+    margin: clamp(8px, 2.5vw, 24px);
+  }
+
+  #tutorial-step,
+  #latihan-step {
+    grid-template-rows: auto;
+  }
+
+  .orme-container {
+    min-height: 520px;
+  }
+
+  .subchapter-content {
+    gap: clamp(16px, 4vw, 36px);
+  }
+}
+
+@media (max-width: 1050px) {
+  .orme-container {
+    min-height: 0;
+    flex-direction: column;
+    gap: clamp(12px, 3vw, 24px);
+  }
+
+  .orme-content-left {
+    width: 100%;
+  }
+
+  .orme-content-right {
+    flex: auto;
+    gap: 12px;
+  }
+
+  .langkah-langkah-scroll-area {
+    flex: auto;
+  }
+
+  .langkah-langkah-steps {
+    max-height: clamp(160px, 32dvh, 280px);
+  }
+
+  .tutorial-tour-overlay,
+  [data-tour-target="graph"] .tutorial-tour-overlay {
+    position: static;
+    order: -1;
+    width: 100%;
+    max-height: none;
+  }
+
+  .tutorial-tour-navigation .chapter-button {
+    width: 44px;
+    height: 44px;
+  }
+
+  .urutan-sorting-container {
+    height: auto;
+    padding: clamp(8px, 2vw, 16px);
+  }
+
+  .urutan-sorting-content {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 8px;
+  }
+
+  .urutan-sorting-content h1 {
+    width: auto;
+  }
+
+  .urutan-sorting-queue {
+    grid-column: 1 / -1;
+    grid-row: 2;
+    min-height: 56px;
+  }
+
+  .tutorial-graph-controls {
+    justify-content: end;
+    flex-wrap: wrap;
+  }
+
+  .graph-container {
+    flex: auto;
+    translate: none;
+  }
+
+  .graph-viewport {
+    flex: none;
+    height: clamp(300px, 70vw, 420px);
+  }
+
+  .worksheet-hint-popup {
+    inset-inline: auto 0;
+    width: min(210px, 72vw);
+  }
+}
+
+@media (max-width: 640px) {
+  .consent-container {
+    padding: clamp(12px, 4vw, 24px);
+    gap: 24px;
+  }
+
+  .consent-container h1 {
+    font-size: clamp(22px, 6vw, 30px);
+    line-height: 1.1;
+    overflow-wrap: anywhere;
+  }
+
+  .consent-text-item h1 {
+    font-size: 18px;
+    line-height: 24px;
+    text-align: start;
+  }
+
+  .consent-form:not(.sus-form) {
+    gap: 24px;
+  }
+
+  .progress-bar-container {
+    gap: 8px 12px;
+  }
+
+  .progress-bar-container > form {
+    padding-inline-start: 0;
+  }
+
+  .progress-bar-app-logo h1 {
+    font-size: clamp(22px, 6vw, 32px);
+  }
+
+  .progress-bar-chapter {
+    order: 1;
+    flex-basis: 100%;
+    justify-content: flex-start;
+    gap: 4px 12px;
+  }
+
+  .progress-bar-chapter h1,
+  .progress-bar-text {
+    font-size: 16px;
+    line-height: 24px;
+  }
+
+  .progress-bar-chapter h1 {
+    flex-basis: 100%;
+  }
+
+  .page-footer > .chapter-button,
+  .progress-bar-container .chapter-button {
+    min-height: 44px;
+    height: auto;
+    padding: 8px clamp(6px, 2.5vw, 12px);
+    font-size: 14px;
+    line-height: 18px;
+    text-align: center;
+  }
+
+  .page-footer > p {
+    font-size: 12px;
+    line-height: 18px;
+  }
+
+  .subchapter-content {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .subchapter-text h1 {
+    font-size: 24px;
+    line-height: 30px;
+  }
+
+  .subchapter-text p,
+  .subchapter-text li {
+    font-size: 16px;
+  }
+
+  .worksheet-material-header h2 {
+    font-size: 20px;
+  }
+}
+
+@media (max-width: 360px) {
+  .urutan-sorting-content {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .urutan-sorting-queue {
+    grid-row: auto;
+  }
+
+  .tutorial-graph-controls {
+    justify-content: start;
+  }
+
+  .worksheet-hint-popup {
+    inset-inline: 0 auto;
+  }
+}
+
+@media (pointer: coarse) {
+  .practice-edge-hit {
+    stroke-width: 32px;
+  }
 }

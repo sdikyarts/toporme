@@ -2,6 +2,7 @@ import type { ReactNode } from "react";
 import { advanceProgress } from "./progress-action";
 import ProgressButton from "./progress-button";
 import { questionnaireScales } from "./questionnaire-scale";
+import { participantSessionId, progressDatabase } from "./progress";
 
 type QuestionnaireProps = {
   idPrefix: "sus" | "mls";
@@ -13,14 +14,22 @@ type QuestionnaireProps = {
   source?: { href: string; label: string };
 };
 
-export default function Questionnaire({ idPrefix, lang, title, instructions, introduction, statements, source }: QuestionnaireProps) {
+export default async function Questionnaire({ idPrefix, lang, title, instructions, introduction, statements, source }: QuestionnaireProps) {
   const { max, start, end } = questionnaireScales[idPrefix];
   const ratings = Array.from({ length: max }, (_, index) => index + 1);
+  const id = await participantSessionId();
+  const sql = progressDatabase();
+  const [response] = await sql`
+    SELECT CASE WHEN ${idPrefix} = 'sus' THEN sus_answers ELSE mls_answers END AS answers
+    FROM participants WHERE id = ${id}
+  `;
+  const savedAnswers = response?.answers as number[] | null | undefined;
 
   return (
     <main className="consent-container sus-container" lang={lang}>
       <h1>{title}</h1>
-      <form className="consent-form sus-form" action={advanceProgress.bind(null, idPrefix === "sus" ? "sus-form" : "mls-form")}>
+      <form className="consent-form sus-form" key={savedAnswers?.join(",")}
+        action={advanceProgress.bind(null, idPrefix === "sus" ? "sus-form" : "mls-form")}>
         <div className="consent-text-item">
           {introduction}
           <p>{instructions}</p>
@@ -37,7 +46,7 @@ export default function Questionnaire({ idPrefix, lang, title, instructions, int
                 {ratings.map((value) => (
                   <label className="option option-item" key={value}>
                     <span>{value}</span>
-                    <input type="radio" name={name} value={value} required />
+                    <input type="radio" name={name} value={value} defaultChecked={savedAnswers?.[index] === value} required />
                   </label>
                 ))}
               </div>

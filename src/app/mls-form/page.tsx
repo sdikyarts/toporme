@@ -1,6 +1,8 @@
 import FlowStep from "../flow-step";
 import Questionnaire from "../questionnaire";
 
+export const metadata = { title: "Metacognitive Laziness Scale (MLS)" };
+
 const statements = [
   "I choose to use AI for assignments so I don’t have to think too hard.",
   "In my courses, I want AI to handle the difficult thinking for me.",
@@ -13,7 +15,7 @@ const statements = [
 export default function Page() {
   return (
     <FlowStep step="mls-form" title="Metacognitive Laziness Scale">
-      <Questionnaire
+      {() => <Questionnaire
         idPrefix="mls"
         lang="en"
         title="Metacognitive Laziness Scale (MLS)"
@@ -26,7 +28,7 @@ export default function Page() {
         instructions="Different students have different approaches to using AI in their learning. Please rate how true each statement is of you:"
         statements={statements}
         source={{ href: "https://doi.org/10.1177/20965311261450994", label: "Scale development paper by Dizon et al." }}
-      />
+      />}
     </FlowStep>
   );
 }

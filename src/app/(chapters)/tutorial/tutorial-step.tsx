@@ -32,6 +32,18 @@ export type TutorialStepProps = {
     };
 };
 
+function GraphViewport({ practice, children }: { practice: boolean; children: ReactNode }) {
+    return (
+        <>
+            {practice && <p className="practice-graph-scroll-hint">Geser graf ke samping untuk melihat semua node.</p>}
+            <div className="graph-viewport" data-practice={practice} tabIndex={practice ? 0 : undefined}
+                role={practice ? "region" : undefined} aria-label={practice ? "Area graf latihan" : undefined}>
+                <div className="graph-content">{children}</div>
+            </div>
+        </>
+    );
+}
+
 export default function TutorialStep({ stage, playing, onTogglePlayback, onTourPrev, onTourNext, onTourSkip, practice }: TutorialStepProps) {
     const tour = practice ? undefined : layoutTour[stage];
     const demo = practice ? undefined : demonstration[stage - layoutTour.length];
@@ -343,7 +355,7 @@ export default function TutorialStep({ stage, playing, onTogglePlayback, onTourP
                     <div className="tutorial-notification" role="status" aria-atomic="true" data-visible={notification.visible}>
                         <span aria-hidden={!notification.visible}>{notification.message}</span>
                     </div>
-                    <div className="graph-content">
+                    <GraphViewport practice={Boolean(practice)}>
                         {practice ? practice.graph : <div className="topological-sort-graph-v1">
                             <div className="directed-acyclic-graph-v1">
                                 <div className="edges-v1">
@@ -428,7 +440,7 @@ export default function TutorialStep({ stage, playing, onTogglePlayback, onTourP
                                 </div>
                             </div>
                         </div>}
-                    </div>
+                    </GraphViewport>
                 </div>
             </div>
         </div>

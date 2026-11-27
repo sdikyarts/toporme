@@ -1,6 +1,8 @@
 import ChapterPage from "../chapter-page";
 import { tutorialPanelName, tutorialStageFromParam } from "./tutorial-flow";
 
+export const metadata = { title: "Tutorial Topological Sort" };
+
 export default async function Page({ searchParams }: PageProps<"/tutorial">) {
   const { panel, stage } = await searchParams;
   const openWorksheet = panel === tutorialPanelName;

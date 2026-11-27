@@ -1,5 +1,6 @@
 "use server";
 
+import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { questionnaireScales } from "./questionnaire-scale";
 import {
@@ -14,7 +15,7 @@ const previousProgress = {
   "replay-latihan": "replay-tutorial",
 } as const;
 
-async function moveParticipant(expected: Progress, destination: Progress) {
+async function moveParticipant(expected: Progress, destination: Progress, answers?: number[]) {
   const id = await participantSessionId();
   if (!id) return null;
 
@@ -25,14 +26,29 @@ async function moveParticipant(expected: Progress, destination: Progress) {
   if (!advances && !unlockedProgress(position.progress, progressStep(destination))) return null;
 
   const sql = progressDatabase();
+  const next = advances ? destination : position.progress;
+  const lastVisited = progressStep(destination);
+  if (answers) {
+    const response = JSON.stringify(answers);
+    const [updated] = await sql`
+      UPDATE participants
+      SET progress = ${next},
+          last_visited_step = ${lastVisited},
+          sus_answers = COALESCE(${expected === "sus-form" ? response : null}::jsonb, sus_answers),
+          mls_answers = COALESCE(${expected === "mls-form" ? response : null}::jsonb, mls_answers)
+      WHERE id = ${id} AND progress = ${position.progress}
+      RETURNING progress
+    `;
+    return updated ? unlockedProgress(updated.progress as Progress, lastVisited) : null;
+  }
   const [updated] = await sql`
     UPDATE participants
-    SET progress = ${advances ? destination : position.progress},
-        last_visited_step = ${progressStep(destination)}
+    SET progress = ${next},
+        last_visited_step = ${lastVisited}
     WHERE id = ${id} AND progress = ${position.progress}
     RETURNING progress
   `;
-  return updated ? unlockedProgress(updated.progress as Progress, progressStep(destination)) : null;
+  return updated ? unlockedProgress(updated.progress as Progress, lastVisited) : null;
 }
 
 export async function recordStepVisit(step: Step) {
@@ -75,6 +91,7 @@ export async function advanceProgress(expected: Progress, formData: FormData) {
   }
   if (expected === "sus-form" || expected === "mls-form") {
     const [prefix, count] = expected === "sus-form" ? (["sus", 10] as const) : (["mls", 6] as const);
+    const responses: number[] = [];
     for (let index = 1; index <= count; index++) {
       const answers = formData.getAll(`${prefix}-${index}`);
       const answer = answers[0];
@@ -82,7 +99,15 @@ export async function advanceProgress(expected: Progress, formData: FormData) {
           || Number(answer) > questionnaireScales[prefix].max) {
         redirect(progressPath(expected));
       }
+      responses.push(Number(answer));
     }
+    const destination = await moveParticipant(expected, nextProgress[expected], responses);
+    if (destination) {
+      revalidatePath(progressPath(expected));
+      redirect(progressPath(destination));
+    }
+    const current = await getParticipantProgress();
+    redirect(current ? progressPath(current) : "/");
   }
 
   const progress = await moveParticipant(expected, nextProgress[expected]) ?? await getParticipantProgress();
