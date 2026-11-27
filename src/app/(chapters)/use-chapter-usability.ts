@@ -34,9 +34,17 @@ export function useChapterUsability(chapter: UsabilityChapter, replay: boolean) 
       window.addEventListener("click", captureFeature, true);
       stopCapture = () => {
         window.removeEventListener("click", captureFeature, true);
-        posthog.set_config({ capture_heatmaps: false });
-        posthog.reset();
         stopCapture = undefined;
+        try {
+          // Disabling heatmaps clears the SDK buffer. Send it under this attempt's identity first.
+          const heatmapData = posthog.heatmaps?.getAndClearBuffer?.();
+          if (heatmapData && Object.keys(heatmapData).length > 0) {
+            posthog.capture("$$heatmap", { ...properties, $heatmap_data: heatmapData }, { send_instantly: true });
+          }
+        } finally {
+          posthog.set_config({ capture_heatmaps: false });
+          posthog.reset();
+        }
       };
       expiration = window.setTimeout(() => stopCapture?.(), Math.max(0, deadline - performance.now()));
     }

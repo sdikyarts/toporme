@@ -221,7 +221,7 @@ export default function ChapterFlow({ progress: initialProgress, initialTutorial
             navigation={
                 <>
                     {latihan.canContinue && (
-                        <form id="latihan-continuation" action={advanceProgress.bind(null, progress)} />
+                        <form id="latihan-continuation" action={advanceProgress.bind(null, progress)} hidden />
                     )}
                     <ChapterNavigation
                         isFirstPage={!isTutorial && !isLatihan && pageIndex === 0}

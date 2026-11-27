@@ -1,8 +1,9 @@
 type PostHogBrowser = {
+  heatmaps?: { getAndClearBuffer?: () => Record<string, unknown[]> | undefined };
   identify: (distinctId: string) => void;
   register: (properties: Record<string, string | number>) => void;
   set_config: (config: { capture_heatmaps: boolean }) => void;
-  capture: (event: string, properties: Record<string, string | number>) => void;
+  capture: (event: string, properties: Record<string, unknown>, options?: { send_instantly: boolean }) => void;
   reset: () => void;
 };
 
