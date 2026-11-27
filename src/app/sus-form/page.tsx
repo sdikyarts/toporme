@@ -14,8 +14,6 @@ const statements = [
   "Sebelum dapat menggunakan sistem ini, saya perlu membiasakan diri dengannya.",
 ];
 
-const ratings = ["Sangat tidak setuju", "Tidak setuju", "Ragu-ragu", "Setuju", "Sangat setuju"];
-
 export default function Page() {
   return (
     <FlowStep step="sus-form" title="Kuesioner SUS">
@@ -25,7 +23,6 @@ export default function Page() {
         title="Kuesioner System Usability Scale (SUS)"
         instructions="Berdasarkan pengalaman Anda menggunakan TopORME, pilih satu jawaban untuk setiap pernyataan."
         statements={statements}
-        ratings={ratings}
       />
     </FlowStep>
   );

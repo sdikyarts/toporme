@@ -1,7 +1,7 @@
 "use server";
 
 import { redirect } from "next/navigation";
-import { tutorialCompletionPath } from "./(chapters)/tutorial/tutorial-flow";
+import { questionnaireScales } from "./questionnaire-scale";
 import {
   getParticipantPosition, getParticipantProgress, nextProgress, participantSessionId,
   progressDatabase, progressPath, progressStep, unlockedProgress, type Progress, type Step,
@@ -54,27 +54,17 @@ export async function recordStepVisit(step: Step) {
   return updated ? progress : null;
 }
 
-export async function switchChapter(expected: Progress) {
+export async function switchChapter(expected: Progress, forwardFromTutorial = false) {
   if (expected === "pengantar" || expected === "replay-pengantar") {
     return moveParticipant(expected, nextProgress[expected]);
   }
   if (expected === "tutorial" || expected === "replay-tutorial") {
+    return moveParticipant(expected, forwardFromTutorial ? nextProgress[expected] : previousProgress[expected]);
+  }
+  if (expected === "latihan" || expected === "replay-latihan") {
     return moveParticipant(expected, previousProgress[expected]);
   }
   return null;
-}
-
-export async function returnToPreviousChapter(expected: Progress) {
-  if (Object.hasOwn(previousProgress, expected)) {
-    const previous = await moveParticipant(expected, previousProgress[expected as keyof typeof previousProgress]);
-    if (previous) {
-      if (progressStep(previous) === "tutorial") redirect(tutorialCompletionPath);
-      redirect(previous.endsWith("pengantar") ? "/pengantar?panel=langkah" : progressPath(previous));
-    }
-  }
-
-  const progress = await getParticipantProgress();
-  redirect(progress ? progressPath(progress) : "/");
 }
 
 export async function advanceProgress(expected: Progress, formData: FormData) {
@@ -84,11 +74,12 @@ export async function advanceProgress(expected: Progress, formData: FormData) {
     if (consent !== "yes" && consent !== "no") redirect("/consent-form");
   }
   if (expected === "sus-form" || expected === "mls-form") {
-    const [prefix, count] = expected === "sus-form" ? ["sus", 10] : ["mls", 6];
+    const [prefix, count] = expected === "sus-form" ? (["sus", 10] as const) : (["mls", 6] as const);
     for (let index = 1; index <= count; index++) {
       const answers = formData.getAll(`${prefix}-${index}`);
       const answer = answers[0];
-      if (answers.length !== 1 || typeof answer !== "string" || !/^[1-5]$/.test(answer)) {
+      if (answers.length !== 1 || typeof answer !== "string" || !/^[1-7]$/.test(answer)
+          || Number(answer) > questionnaireScales[prefix].max) {
         redirect(progressPath(expected));
       }
     }

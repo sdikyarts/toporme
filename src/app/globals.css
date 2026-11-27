@@ -1875,23 +1875,37 @@ a.consent-form-button:hover {
   font-weight: 800;
 }
 
-.sus-question .options {
-  gap: 0;
+.questionnaire-ratings {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
 }
 
-.sus-question .option-item {
+.questionnaire-ratings[data-count="5"] {
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+}
+
+.questionnaire-ratings .option-item {
   align-items: center;
+  justify-content: center;
+  gap: 4px;
+  min-height: 52px;
+  cursor: pointer;
 }
 
-.sus-question .option-item input {
+.questionnaire-ratings .option-item input {
   margin-block-start: 0;
 }
 
-.sus-question .option-item label {
-  flex: 1;
-  align-content: center;
-  min-height: 44px;
-  cursor: pointer;
+.questionnaire-scale {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  margin-block-start: 4px;
+  font-size: 14px;
+}
+
+.questionnaire-scale span:last-child {
+  text-align: end;
 }
 
 
@@ -1918,6 +1932,7 @@ a.consent-form-button:hover {
 
 .thank-you-card p {
   margin: 16px 0 0;
+  font-size: clamp(18px, 3vw, 22px);
   font-weight: 600;
 }
 

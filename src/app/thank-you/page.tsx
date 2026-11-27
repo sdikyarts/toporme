@@ -9,7 +9,7 @@ export default function Page() {
         <section className="login-card thank-you-card">
           <div>
             <h1 className="thank-you-heading" lang="en">
-              <span>Thank</span>{" "}<span>You</span>!
+              <span>Thank</span>{" "}<span>You!</span>
             </h1>
             <p lang="id">Terima kasih telah menggunakan TopORME!</p>
           </div>

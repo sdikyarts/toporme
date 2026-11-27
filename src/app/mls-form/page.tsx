@@ -10,14 +10,6 @@ const statements = [
   "I want to do well in my courses, but only if AI can handle the difficult parts.",
 ];
 
-const ratings = [
-  "not at all true of me",
-  "slightly true of me",
-  "moderately true of me",
-  "mostly true of me",
-  "very true of me",
-];
-
 export default function Page() {
   return (
     <FlowStep step="mls-form" title="Metacognitive Laziness Scale">
@@ -33,7 +25,6 @@ export default function Page() {
         }
         instructions="Different students have different approaches to using AI in their learning. Please rate how true each statement is of you:"
         statements={statements}
-        ratings={ratings}
         source={{ href: "https://doi.org/10.1177/20965311261450994", label: "Scale development paper by Dizon et al." }}
       />
     </FlowStep>

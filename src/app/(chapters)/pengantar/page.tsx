@@ -1,8 +1,5 @@
-import FlowStep from "../../flow-step";
-import ChapterFlow from "../chapter-flow";
+import ChapterPage from "../chapter-page";
 
 export default function Page() {
-  return <FlowStep step="pengantar" title="Pengantar">
-    {(progress) => <ChapterFlow progress={progress} />}
-  </FlowStep>;
+  return <ChapterPage step="pengantar" />;
 }

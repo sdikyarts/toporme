@@ -6,16 +6,25 @@ import ChapterLayout, { chapterProgressForm } from "../chapter-layout";
 import ChapterNavigation from "../chapter-navigation";
 import { recordStepVisit, switchChapter } from "../progress-action";
 import type { Progress } from "../progress";
+import { latihanTitle, useLatihan } from "./latihan/latihan";
+import { latihanPanelName } from "./latihan/latihan-state";
 import Pengantar, { panelNames } from "./pengantar/pengantar";
 import Tutorial, { tutorialTitle } from "./tutorial/tutorial";
-import { layoutTour, tutorialCompletionStage, tutorialLastStage, tutorialPanelName, tutorialStageFromParam } from "./tutorial/tutorial-flow";
+import { layoutTour, tutorialCompletionPath, tutorialCompletionStage, tutorialLastStage, tutorialPanelName, tutorialStageFromParam } from "./tutorial/tutorial-flow";
 
-export default function ChapterFlow({ progress: initialProgress, initialTutorialStage }: { progress: Progress; initialTutorialStage?: number }) {
+export default function ChapterFlow({ progress: initialProgress, initialTutorialStage, initialLatihanOpen, storageScope }: {
+    progress: Progress;
+    initialTutorialStage?: number;
+    initialLatihanOpen?: boolean;
+    storageScope: string | null;
+}) {
     const params = useSearchParams();
     const panel = params.get("panel");
     const [{ progress, pageIndex }, setChapter] = useState(() => ({
         progress: initialProgress,
-        pageIndex: initialProgress.endsWith("tutorial")
+        pageIndex: initialProgress.endsWith("latihan")
+            ? Number(initialLatihanOpen ?? (panel === latihanPanelName))
+            : initialProgress.endsWith("tutorial")
             ? Number(initialTutorialStage !== undefined || panel === tutorialPanelName)
             : Math.max(0, panelNames.indexOf(panel ?? "")),
     }));
@@ -27,10 +36,14 @@ export default function ChapterFlow({ progress: initialProgress, initialTutorial
     const [continuationReady, setContinuationReady] = useState(false);
     const switching = useRef(false);
     const isTutorial = progress === "tutorial" || progress === "replay-tutorial";
+    const isLatihan = progress === "latihan" || progress === "replay-latihan";
+    const latihanProgress = initialProgress.startsWith("replay-") ? "replay-latihan" : "latihan";
+    const latihan = useLatihan(isLatihan ? pageIndex : -1, storageScope ? `toporme:latihan:v1:${storageScope}:${latihanProgress}` : null);
     const isTutorialPanel = isTutorial && pageIndex === 1;
     const lastPageIndex = panelNames.length - 1;
     const isLastPage = pageIndex === lastPageIndex;
     const isTutorialComplete = isTutorialPanel && tutorialStage === tutorialLastStage;
+    const isSusContinuation = latihan.canContinue && progress === "latihan";
 
     useEffect(() => {
         if (!isTutorialComplete) return;
@@ -63,7 +76,7 @@ export default function ChapterFlow({ progress: initialProgress, initialTutorial
     useEffect(() => {
         async function restoreChapter() {
             const { pathname, search } = window.location;
-            const step = pathname === "/tutorial" ? "tutorial" : pathname === "/pengantar" ? "pengantar" : null;
+            const step = pathname === "/latihan" ? "latihan" : pathname === "/tutorial" ? "tutorial" : pathname === "/pengantar" ? "pengantar" : null;
             if (!step) return;
             const params = new URLSearchParams(search);
             const panel = params.get("panel");
@@ -72,10 +85,14 @@ export default function ChapterFlow({ progress: initialProgress, initialTutorial
                 if (!visited || window.location.pathname !== pathname || window.location.search !== search) return;
                 setPlaying(false);
                 setContinuationReady(false);
-                setTutorialStage(step === "tutorial" && panel === tutorialPanelName ? tutorialStageFromParam(params.get("stage")) : 0);
+                if (step === "tutorial") {
+                    setTutorialStage(panel === tutorialPanelName ? tutorialStageFromParam(params.get("stage")) : 0);
+                }
                 setChapter({
                     progress: visited,
-                    pageIndex: step === "tutorial" ? Number(panel === tutorialPanelName) : Math.max(0, panelNames.indexOf(panel ?? "")),
+                    pageIndex: step === "latihan" ? Number(panel === latihanPanelName)
+                        : step === "tutorial" ? Number(panel === tutorialPanelName)
+                        : Math.max(0, panelNames.indexOf(panel ?? "")),
                 });
             } catch {
                 setError(true);
@@ -89,35 +106,45 @@ export default function ChapterFlow({ progress: initialProgress, initialTutorial
     function goToPage(index: number) {
         if (switching.current) return;
         setPlaying(false);
-        setTutorialStage(0);
+        if (isTutorial) setTutorialStage(0);
         setChapter({ progress, pageIndex: index });
         const url = new URL(window.location.href);
         url.searchParams.delete("stage");
         if (index === 0) url.searchParams.delete("panel");
-        else url.searchParams.set("panel", isTutorial ? tutorialPanelName : panelNames[index]);
+        else url.searchParams.set("panel", isLatihan ? latihanPanelName : isTutorial ? tutorialPanelName : panelNames[index]);
         window.history.replaceState(null, "", `${url.pathname}${url.search}${url.hash}`);
     }
 
     function goNext() {
-        if (isTutorialPanel) {
+        if (switching.current) return;
+        if (isLatihan) {
+            if (pageIndex === 0) goToPage(1);
+        } else if (isTutorialPanel) {
+            if (isTutorialComplete) {
+                if (continuationReady) void goToOtherChapter("/latihan");
+                return;
+            }
             if (tutorialStage + 1 === tutorialLastStage) setContinuationReady(false);
             setPlaying(false);
             setTutorialStage(tutorialStage + 1);
         } else if (isTutorial) {
             goToPage(1);
         } else if (isLastPage) {
-            void goToOtherChapter();
+            void goToOtherChapter("/tutorial");
         } else {
             goToPage(pageIndex + 1);
         }
     }
 
     function goPrev() {
-        if (isTutorialPanel && tutorialStage > 0) {
+        if (switching.current) return;
+        if (isLatihan && pageIndex === 0) {
+            void goToOtherChapter(tutorialCompletionPath);
+        } else if (isTutorialPanel && tutorialStage > 0) {
             setPlaying(false);
             setTutorialStage(tutorialStage - 1);
         } else if (isTutorial && !isTutorialPanel) {
-            void goToOtherChapter();
+            void goToOtherChapter("/pengantar?panel=langkah");
         } else {
             goToPage(pageIndex - 1);
         }
@@ -137,18 +164,25 @@ export default function ChapterFlow({ progress: initialProgress, initialTutorial
         setTutorialStage(layoutTour.length);
     }
 
-    async function goToOtherChapter() {
+    async function goToOtherChapter(path: string) {
         if (switching.current) return;
         switching.current = true;
         setError(false);
         try {
-            const destination = await switchChapter(progress);
+            const destination = await switchChapter(progress, path === "/latihan");
             if (!destination) {
                 setError(true);
                 return;
             }
-            window.history.pushState(null, "", isTutorial ? "/pengantar?panel=langkah" : "/tutorial");
-            setChapter({ progress: destination, pageIndex: isTutorial ? lastPageIndex : 0 });
+            window.history.pushState(null, "", path);
+            setPlaying(false);
+            setContinuationReady(false);
+            if (path === tutorialCompletionPath) setTutorialStage(tutorialLastStage);
+            else if (path === "/tutorial") setTutorialStage(0);
+            setChapter({
+                progress: destination,
+                pageIndex: path === tutorialCompletionPath ? 1 : path.startsWith("/pengantar") ? lastPageIndex : 0,
+            });
         } catch {
             setError(true);
         } finally {
@@ -159,30 +193,32 @@ export default function ChapterFlow({ progress: initialProgress, initialTutorial
     return (
         <ChapterLayout
             progress={progress}
-            percent={isTutorial ? (tutorialStage / tutorialLastStage) * 100 : (pageIndex / lastPageIndex) * 100}
-            title={isTutorial ? tutorialTitle : undefined}
-            skipDisabled={!isTutorial && isLastPage}
-            onSkip={isTutorial ? undefined : (event) => {
+            percent={isLatihan ? latihan.percent : isTutorial ? (tutorialStage / tutorialLastStage) * 100 : (pageIndex / lastPageIndex) * 100}
+            title={isLatihan ? latihanTitle : isTutorial ? tutorialTitle : undefined}
+            skipDisabled={isLatihan || (!isTutorial && isLastPage)}
+            onSkip={(event) => {
                 event.preventDefault();
-                if (!isLastPage) void goToOtherChapter();
+                if (isLatihan) return;
+                if (isTutorial) void goToOtherChapter("/latihan");
+                else if (!isLastPage) void goToOtherChapter("/tutorial");
             }}
             navigation={
                 <>
                     <ChapterNavigation
-                        isFirstPage={!isTutorial && pageIndex === 0}
+                        isFirstPage={!isTutorial && !isLatihan && pageIndex === 0}
                         prevLabel={isTutorial && !isTutorialPanel ? "Kembali ke Bagian 1" : undefined}
-                        nextLabel={isTutorialComplete ? "Lanjut ke Bagian 3" : !isTutorial && isLastPage ? "Lanjut ke Bagian 2" : undefined}
-                        nextAccent={isTutorialComplete || (!isTutorial && isLastPage)}
-                        nextForm={isTutorialComplete ? chapterProgressForm : undefined}
-                        nextDisabled={isTutorialComplete && !continuationReady}
+                        nextLabel={isLatihan ? (isSusContinuation ? "Lanjut ke SUS Form" : undefined) : isTutorialComplete ? "Lanjut ke Bagian 3" : !isTutorial && isLastPage ? "Lanjut ke Bagian 2" : undefined}
+                        nextAccent={isLatihan ? isSusContinuation : isTutorialComplete || (!isTutorial && isLastPage)}
+                        nextForm={latihan.canContinue ? chapterProgressForm : undefined}
+                        nextDisabled={isLatihan ? pageIndex === 1 && !latihan.canContinue : isTutorialComplete && !continuationReady}
                         onPrev={goPrev}
-                        onNext={isTutorialComplete ? undefined : goNext}
+                        onNext={latihan.canContinue ? undefined : goNext}
                     />
                     {error && <p role="alert">Gagal berpindah bagian. Coba lagi.</p>}
                 </>
             }
         >
-            <Pengantar activePage={isTutorial ? -1 : pageIndex} />
+            <Pengantar activePage={isTutorial || isLatihan ? -1 : pageIndex} />
             <Tutorial
                 activePage={isTutorial ? pageIndex : -1}
                 stage={tutorialStage}
@@ -192,6 +228,7 @@ export default function ChapterFlow({ progress: initialProgress, initialTutorial
                 onTourNext={goNext}
                 onTourSkip={skipIntroduction}
             />
+            {latihan.panels}
         </ChapterLayout>
     );
 }

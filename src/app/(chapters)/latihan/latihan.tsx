@@ -1,17 +1,13 @@
 "use client";
 
-import { useEffect, useLayoutEffect, useState } from "react";
-import ChapterLayout, { chapterProgressForm } from "../../chapter-layout";
-import ChapterNavigation from "../../chapter-navigation";
+import { useLayoutEffect, useState } from "react";
 import ChapterTitle from "../pengantar/chapter-title";
-import { returnToPreviousChapter } from "../../progress-action";
-import type { Progress } from "../../progress";
 import TutorialStep from "../tutorial/tutorial-step";
 import { tutorialCompletionStep } from "../tutorial/tutorial-flow";
 import PracticeGraph, { nodeNames, practiceEdges, type PracticeNode } from "./practice-graph";
 import { latihanPanelName, readLatihanSnapshot, type LatihanSnapshot } from "./latihan-state";
 
-const latihanTitle = "Latihan Topological Sort";
+export const latihanTitle = "Latihan Topological Sort";
 const practiceHints = [
     "Hitung panah yang ujungnya mengarah ke node. Abaikan panah yang sudah dihapus.",
     "Cari node yang tidak memiliki panah masuk.",
@@ -20,8 +16,7 @@ const practiceHints = [
     "Lihat hasilnya di Urutan Sorting.",
 ];
 
-export default function Latihan({ progress, initialOpen, storageKey }: { progress: Progress; initialOpen: boolean; storageKey: string | null }) {
-    const [open, setOpen] = useState(initialOpen);
+export function useLatihan(activePage: number, storageKey: string | null) {
     const [restored, setRestored] = useState(false);
     const [step, setStep] = useState(0);
     const [queue, setQueue] = useState<PracticeNode[]>([]);
@@ -54,25 +49,8 @@ export default function Latihan({ progress, initialOpen, storageKey }: { progres
         }
     }, [restored, storageKey, step, queue, selected, marked, values, review]);
 
-    useEffect(() => {
-        function restorePanel() {
-            if (window.location.pathname === "/latihan") {
-                setOpen(new URLSearchParams(window.location.search).get("panel") === latihanPanelName);
-            }
-        }
-        window.addEventListener("popstate", restorePanel);
-        return () => window.removeEventListener("popstate", restorePanel);
-    }, []);
-
-    function showWorksheet(visible: boolean) {
-        setOpen(visible);
-        const url = new URL(window.location.href);
-        if (visible) url.searchParams.set("panel", latihanPanelName);
-        else url.searchParams.delete("panel");
-        window.history.replaceState(null, "", `${url.pathname}${url.search}${url.hash}`);
-    }
     const complete = queue.length === nodeNames.length;
-    const canContinue = open && complete && step === tutorialCompletionStep;
+    const canContinue = activePage === 1 && complete && step === tutorialCompletionStep;
     const iteration = Math.min(queue.length + 1, nodeNames.length);
     const remaining = practiceEdges.filter(([from]) => !queue.includes(from));
     const outgoing = remaining.filter(([from]) => from === selected).map(([from, to]) => from + to);
@@ -128,31 +106,12 @@ export default function Latihan({ progress, initialOpen, storageKey }: { progres
         setStep(next.length === nodeNames.length ? tutorialCompletionStep : 0);
     }
 
-    return (
-        <ChapterLayout
-            progress={progress}
-            percent={queue.length / nodeNames.length * 100}
-            title={latihanTitle}
-            skipDisabled
-            navigation={
-                <>
-                    <form id="previous-chapter" action={returnToPreviousChapter.bind(null, progress)} hidden />
-                    <ChapterNavigation
-                        isFirstPage={false}
-                        prevForm={open ? undefined : "previous-chapter"}
-                        onPrev={open ? () => showWorksheet(false) : undefined}
-                        nextForm={canContinue ? chapterProgressForm : undefined}
-                        nextDisabled={open && !canContinue}
-                        nextLabel={canContinue && progress === "latihan" ? "Lanjut ke SUS Form" : undefined}
-                        onNext={open ? undefined : () => showWorksheet(true)}
-                    />
-                </>
-            }
-        >
-            <div className="chapter-panel" inert={open}>
+    const panels = (
+        <>
+            <div className="chapter-panel" inert={activePage !== 0}>
                 <ChapterTitle section="Bagian 3" title={latihanTitle} />
             </div>
-            <section id={latihanPanelName} className="chapter-panel" aria-label="Lembar latihan" inert={!open}>
+            <section id={latihanPanelName} className="chapter-panel" aria-label="Lembar latihan" inert={activePage !== 1}>
                 {restored && <TutorialStep stage={iteration * 5 + step} practice={{
                     step, iteration, queue,
                     review,
@@ -169,6 +128,8 @@ export default function Latihan({ progress, initialOpen, storageKey }: { progres
                         onEdge={(edge) => setMarked((previous) => previous.includes(edge) ? previous.filter((item) => item !== edge) : [...previous, edge])} />,
                 }} />}
             </section>
-        </ChapterLayout>
+        </>
     );
+
+    return { panels, canContinue, percent: queue.length / nodeNames.length * 100 };
 }
