@@ -2,7 +2,7 @@
 
 import { neon } from "@neondatabase/serverless";
 import { cookies } from "next/headers";
-import { redirect } from "next/navigation";
+import { redirect, RedirectType } from "next/navigation";
 import { progressPath, type Progress } from "./progress";
 
 export type ParticipantState = {
@@ -10,6 +10,11 @@ export type ParticipantState = {
   message: string;
   fields?: { namaLengkap: string; npm: string; email: string };
 };
+
+export async function logoutParticipant() {
+  (await cookies()).delete("toporme_participant");
+  redirect("/", RedirectType.replace);
+}
 
 export async function saveParticipant(
   _previousState: ParticipantState,

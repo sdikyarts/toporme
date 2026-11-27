@@ -1849,3 +1849,78 @@ a.consent-form-button:hover {
   line-height: 36px;
   text-align: center;
 }
+
+.sus-container {
+  padding: clamp(16px, 4vw, 32px);
+}
+
+.sus-form {
+  width: min(100%, 48rem);
+  align-self: center;
+  gap: 24px;
+}
+
+.sus-question {
+  width: 100%;
+  min-inline-size: 0;
+  margin: 0;
+  padding: 0 0 16px;
+  border: 0;
+  border-bottom: 1px solid var(--color-tailwind-slate-300);
+}
+
+.sus-question legend {
+  padding: 0;
+  margin-block-end: 8px;
+  font-weight: 800;
+}
+
+.sus-question .options {
+  gap: 0;
+}
+
+.sus-question .option-item {
+  align-items: center;
+}
+
+.sus-question .option-item input {
+  margin-block-start: 0;
+}
+
+.sus-question .option-item label {
+  flex: 1;
+  align-content: center;
+  min-height: 44px;
+  cursor: pointer;
+}
+
+
+.thank-you-card {
+  width: min(720px, 100%);
+  color: var(--color-tailwind-slate-950);
+  text-align: center;
+}
+
+.thank-you-heading {
+  margin: 0;
+  font-size: clamp(40px, 10vw, 96px);
+  font-weight: 800;
+  line-height: 1;
+}
+
+.thank-you-heading span:first-child {
+  color: var(--color-tailwind-blue-900);
+}
+
+.thank-you-heading span:last-child {
+  color: var(--color-tailwind-blue-500);
+}
+
+.thank-you-card p {
+  margin: 16px 0 0;
+  font-weight: 600;
+}
+
+.thank-you-card form {
+  max-width: 320px;
+}

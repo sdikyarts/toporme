@@ -84,8 +84,14 @@ export async function advanceProgress(expected: Progress, formData: FormData) {
     if (consent !== "yes" && consent !== "no") redirect("/consent-form");
   }
   if (expected === "sus-form" || expected === "mls-form") {
-    // Connect survey storage here before enabling these transitions.
-    redirect("/");
+    const [prefix, count] = expected === "sus-form" ? ["sus", 10] : ["mls", 6];
+    for (let index = 1; index <= count; index++) {
+      const answers = formData.getAll(`${prefix}-${index}`);
+      const answer = answers[0];
+      if (answers.length !== 1 || typeof answer !== "string" || !/^[1-5]$/.test(answer)) {
+        redirect(progressPath(expected));
+      }
+    }
   }
 
   const progress = await moveParticipant(expected, nextProgress[expected]) ?? await getParticipantProgress();
