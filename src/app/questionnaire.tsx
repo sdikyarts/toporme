@@ -1,8 +1,10 @@
-import type { CSSProperties, ReactNode } from "react";
+import type { ReactNode } from "react";
+import Link from "next/link";
 import { advanceProgress } from "./progress-action";
 import ProgressButton from "./progress-button";
-import { questionnaireScales } from "./questionnaire-scale";
-import { participantSessionId, progressDatabase } from "./progress";
+import QuestionnaireRatings from "./questionnaire-ratings";
+import { legacySusRatings, questionnaireScales } from "./questionnaire-scale";
+import { nextProgress, participantSessionId, progressDatabase, progressPath } from "./progress";
 
 type QuestionnaireProps = {
   idPrefix: "sus" | "mls";
@@ -15,21 +17,22 @@ type QuestionnaireProps = {
 };
 
 export default async function Questionnaire({ idPrefix, lang, title, instructions, introduction, statements, source }: QuestionnaireProps) {
-  const ratings = questionnaireScales[idPrefix];
-  const midpoint = Math.floor(ratings.length / 2);
+  const step = idPrefix === "sus" ? "sus-form" : "mls-form";
   const id = await participantSessionId();
   const sql = progressDatabase();
   const [response] = await sql`
-    SELECT CASE WHEN ${idPrefix} = 'sus' THEN sus_answers ELSE mls_answers END AS answers
+    SELECT CASE WHEN ${idPrefix} = 'sus' THEN sus_answers ELSE mls_answers END AS answers, sus_response_scale
     FROM participants WHERE id = ${id}
   `;
   const savedAnswers = response?.answers as number[] | null | undefined;
+  const ratings = idPrefix === "sus" && savedAnswers && response?.sus_response_scale === 7
+    ? legacySusRatings : questionnaireScales[idPrefix];
 
   return (
     <main className="consent-container sus-container" lang={lang}>
       <h1>{title}</h1>
       <form className="consent-form sus-form" key={savedAnswers?.join(",")}
-        action={advanceProgress.bind(null, idPrefix === "sus" ? "sus-form" : "mls-form")}>
+        action={advanceProgress.bind(null, step)}>
         <div className="consent-text-item">
           {introduction}
           <p>{instructions}</p>
@@ -39,30 +42,17 @@ export default async function Questionnaire({ idPrefix, lang, title, instruction
         </svg>
         {statements.map((statement, index) => {
           const name = `${idPrefix}-${index + 1}`;
-          const savedAnswer = savedAnswers?.[index];
           return (
-            <fieldset className="sus-question" key={name}>
+            <fieldset className="sus-question" key={name} disabled={Boolean(savedAnswers)}>
               <legend>{index + 1}. {statement}</legend>
-              <div className="questionnaire-ratings" data-count={ratings.length}>
-                {ratings.map((label, ratingIndex) => {
-                  const value = ratingIndex + 1;
-                  const distance = (ratingIndex - midpoint) / midpoint;
-                  const endpoint = distance < 0 ? "#b91c1c" : "#15803d";
-                  const accent = `color-mix(in oklab, ${endpoint} ${Math.abs(distance) * 100}%, var(--color-tailwind-slate-600))`;
-                  return (
-                    <label className="option option-item" key={value} style={{ "--rating-accent": accent } as CSSProperties}>
-                      <span>{value}</span>
-                      <input type="radio" name={name} value={value} defaultChecked={savedAnswer === value} required />
-                      <span className="questionnaire-rating-label">{label}</span>
-                    </label>
-                  );
-                })}
-              </div>
+              <QuestionnaireRatings name={name} ratings={ratings} savedAnswer={savedAnswers?.[index]} />
             </fieldset>
           );
         })}
         {source && <a className="underline" href={source.href}>{source.label}</a>}
-        <ProgressButton className="consent-form-button" lang="id">Lanjutkan</ProgressButton>
+        {savedAnswers ? (
+          <Link className="underline" href={progressPath(nextProgress[step])} lang="id" prefetch={false}>Lanjutkan</Link>
+        ) : <ProgressButton className="consent-form-button" lang="en">Submit Form</ProgressButton>}
       </form>
     </main>
   );

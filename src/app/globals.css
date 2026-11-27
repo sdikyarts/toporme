@@ -1947,6 +1947,11 @@ a.consent-form-button:hover {
   color: var(--rating-accent);
 }
 
+.questionnaire-ratings .option-item:has(input:disabled),
+.questionnaire-ratings .option-item input[type="radio"]:disabled {
+  cursor: default;
+}
+
 .questionnaire-rating-label {
   font-size: 0.875rem;
   line-height: 1.25;

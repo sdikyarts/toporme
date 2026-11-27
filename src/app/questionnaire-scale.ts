@@ -2,9 +2,7 @@ export const questionnaireScales = {
   sus: [
     "Sangat tidak setuju",
     "Tidak setuju",
-    "Agak tidak setuju",
     "Netral",
-    "Agak setuju",
     "Setuju",
     "Sangat setuju",
   ],
@@ -16,3 +14,13 @@ export const questionnaireScales = {
     "Very true of me",
   ],
 } as const;
+
+export const legacySusRatings = [
+  "Sangat tidak setuju",
+  "Tidak setuju",
+  "Agak tidak setuju",
+  "Netral",
+  "Agak setuju",
+  "Setuju",
+  "Sangat setuju",
+] as const;

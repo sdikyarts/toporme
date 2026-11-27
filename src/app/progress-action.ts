@@ -52,8 +52,12 @@ async function moveParticipant(
       UPDATE participants
       SET progress = ${next},
           last_visited_step = ${lastVisited},
-          sus_answers = COALESCE(${expected === "sus-form" ? response : null}::jsonb, sus_answers),
-          mls_answers = COALESCE(${expected === "mls-form" ? response : null}::jsonb, mls_answers)
+          sus_response_scale = CASE
+            WHEN ${expected === "sus-form"} AND sus_answers IS NULL THEN ${questionnaireScales.sus.length}
+            ELSE sus_response_scale
+          END,
+          sus_answers = COALESCE(sus_answers, ${expected === "sus-form" ? response : null}::jsonb),
+          mls_answers = COALESCE(mls_answers, ${expected === "mls-form" ? response : null}::jsonb)
       WHERE id = ${id} AND progress = ${position.progress}
       RETURNING progress
     `;
