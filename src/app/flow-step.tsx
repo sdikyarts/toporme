@@ -2,7 +2,7 @@ import { Suspense, type ReactNode } from "react";
 import { redirect } from "next/navigation";
 import { advanceProgress } from "./progress-action";
 import ProgressButton from "./progress-button";
-import { getParticipantPosition, progressPath, unlockedProgress, type Progress, type Step } from "./progress";
+import { getParticipantPosition, participantSessionId, progressPath, unlockedProgress, type Progress, type Step } from "./progress";
 import StepVisit from "./step-visit";
 
 type StepProps = {
@@ -13,13 +13,14 @@ type StepProps = {
 
 async function CurrentStep({ step, title, children }: StepProps) {
   const position = await getParticipantPosition();
-  if (!position) redirect("/");
+  const participantId = await participantSessionId();
+  if (!position || !participantId) redirect("/");
   const progress = unlockedProgress(position.progress, step);
   if (!progress) redirect(progressPath(position.lastVisited));
 
   return (
     <>
-      <StepVisit step={step} />
+      <StepVisit step={step} participantId={participantId} />
       <StepContent step={step} title={title} progress={progress}>{children}</StepContent>
     </>
   );

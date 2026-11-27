@@ -2,6 +2,7 @@
 
 import { useSearchParams } from "next/navigation";
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
+import posthog from "posthog-js";
 import ChapterLayout, { chapterProgressForm } from "../chapter-layout";
 import ChapterNavigation from "../chapter-navigation";
 import { recordStepVisit, switchChapter } from "../progress-action";
@@ -160,6 +161,9 @@ export default function ChapterFlow({ progress: initialProgress, initialTutorial
     }
 
     function skipIntroduction() {
+        if (process.env.NEXT_PUBLIC_POSTHOG_PROJECT_TOKEN && process.env.NEXT_PUBLIC_POSTHOG_HOST) {
+            posthog.capture("tutorial_skipped");
+        }
         setPlaying(false);
         setTutorialStage(layoutTour.length);
     }
@@ -173,6 +177,12 @@ export default function ChapterFlow({ progress: initialProgress, initialTutorial
             if (!destination) {
                 setError(true);
                 return;
+            }
+            if (process.env.NEXT_PUBLIC_POSTHOG_PROJECT_TOKEN && process.env.NEXT_PUBLIC_POSTHOG_HOST) {
+                posthog.capture("chapter_transitioned", {
+                    from_progress: progress,
+                    to_progress: destination,
+                });
             }
             window.history.pushState(null, "", path);
             setPlaying(false);

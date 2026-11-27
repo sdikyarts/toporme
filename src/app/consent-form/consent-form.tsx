@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import posthog from "posthog-js";
 import { advanceProgress } from "../progress-action";
 import ProgressButton from "../progress-button";
 
@@ -13,7 +14,15 @@ export default function ConsentForm() {
         <main>
             <div className="consent-container">
                 <h1>Informed Consent Form</h1>
-                <form className="consent-form" action={submitConsent}>
+                <form
+                    className="consent-form"
+                    action={submitConsent}
+                    onSubmit={() => {
+                        if (process.env.NEXT_PUBLIC_POSTHOG_PROJECT_TOKEN && process.env.NEXT_PUBLIC_POSTHOG_HOST) {
+                            posthog.capture("consent_submitted");
+                        }
+                    }}
+                >
                     <div className="consent-text">
                         <div className="consent-text-item">
                             <h1>Penjelasan dan Informed Consent Form</h1>

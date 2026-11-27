@@ -1,4 +1,7 @@
+"use client";
+
 import type { ReactNode } from "react";
+import posthog from "posthog-js";
 import { advanceProgress } from "./progress-action";
 import ProgressButton from "./progress-button";
 import { questionnaireScales } from "./questionnaire-scale";
@@ -20,7 +23,18 @@ export default function Questionnaire({ idPrefix, lang, title, instructions, int
   return (
     <main className="consent-container sus-container" lang={lang}>
       <h1>{title}</h1>
-      <form className="consent-form sus-form" action={advanceProgress.bind(null, idPrefix === "sus" ? "sus-form" : "mls-form")}>
+      <form
+        className="consent-form sus-form"
+        action={advanceProgress.bind(null, idPrefix === "sus" ? "sus-form" : "mls-form")}
+        onSubmit={() => {
+          if (process.env.NEXT_PUBLIC_POSTHOG_PROJECT_TOKEN && process.env.NEXT_PUBLIC_POSTHOG_HOST) {
+            posthog.capture("questionnaire_submitted", {
+              questionnaire: idPrefix,
+              question_count: statements.length,
+            });
+          }
+        }}
+      >
         <div className="consent-text-item">
           {introduction}
           <p>{instructions}</p>

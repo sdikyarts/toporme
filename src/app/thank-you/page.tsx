@@ -14,7 +14,7 @@ export default function Page() {
             <p lang="id">Terima kasih telah menggunakan TopORME!</p>
           </div>
           <form className="login-form" action={logoutParticipant}>
-            <ProgressButton className="consent-form-button">Logout</ProgressButton>
+            <ProgressButton className="consent-form-button" resetPostHog>Logout</ProgressButton>
           </form>
         </section>
       </main>

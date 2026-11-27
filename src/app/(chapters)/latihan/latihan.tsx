@@ -1,6 +1,7 @@
 "use client";
 
 import { useLayoutEffect, useState } from "react";
+import posthog from "posthog-js";
 import ChapterTitle from "../pengantar/chapter-title";
 import TutorialStep from "../tutorial/tutorial-step";
 import { tutorialCompletionStep } from "../tutorial/tutorial-flow";
@@ -75,15 +76,38 @@ export function useLatihan(activePage: number, storageKey: string | null) {
         }
 
         if (step === 0) {
-            setReview(incorrect.length === 0
+            const correct = incorrect.length === 0;
+            if (process.env.NEXT_PUBLIC_POSTHOG_PROJECT_TOKEN && process.env.NEXT_PUBLIC_POSTHOG_HOST) {
+                posthog.capture("practice_answer_checked", {
+                    iteration,
+                    practice_task: "in_degree",
+                    is_correct: correct,
+                });
+            }
+            setReview(correct
                 ? { correct: true, message: "Jawaban benar, semua in-degree node sudah tepat!" }
                 : { correct: false, message: "Jawaban belum tepat. Periksa kembali in-degree yang ditandai." });
         } else if (step === 1) {
-            setReview(selected && degree(selected) === 0
+            const correct = Boolean(selected && degree(selected) === 0);
+            if (process.env.NEXT_PUBLIC_POSTHOG_PROJECT_TOKEN && process.env.NEXT_PUBLIC_POSTHOG_HOST) {
+                posthog.capture("practice_answer_checked", {
+                    iteration,
+                    practice_task: "zero_indegree_node",
+                    is_correct: correct,
+                });
+            }
+            setReview(correct
                 ? { correct: true, message: "Jawaban benar, node yang dipilih sudah tepat!" }
                 : { correct: false, message: "Pilih node yang memiliki in-degree 0." });
         } else if (step === 2) {
             const correct = marked.length === outgoing.length && outgoing.every((edge) => marked.includes(edge));
+            if (process.env.NEXT_PUBLIC_POSTHOG_PROJECT_TOKEN && process.env.NEXT_PUBLIC_POSTHOG_HOST) {
+                posthog.capture("practice_answer_checked", {
+                    iteration,
+                    practice_task: "outgoing_edges",
+                    is_correct: correct,
+                });
+            }
             setReview(correct
                 ? { correct: true, message: "Jawaban benar, semua outgoing edge sudah dipilih!" }
                 : { correct: false, message: "Jawaban belum tepat. Pilih semua panah keluar dari node terpilih saja." });
@@ -98,6 +122,16 @@ export function useLatihan(activePage: number, storageKey: string | null) {
         if (step !== 3 || node !== selected || queue.includes(node)) return;
 
         const next = [...queue, node];
+        if (process.env.NEXT_PUBLIC_POSTHOG_PROJECT_TOKEN && process.env.NEXT_PUBLIC_POSTHOG_HOST) {
+            posthog.capture("practice_node_added", {
+                order_position: next.length,
+            });
+            if (next.length === nodeNames.length) {
+                posthog.capture("practice_completed", {
+                    node_count: next.length,
+                });
+            }
+        }
         setQueuedFrom(button.getBoundingClientRect());
         setQueue(next);
         setSelected(null);
