@@ -1930,23 +1930,21 @@ a.consent-form-button:hover {
   gap: 4px;
   min-height: 52px;
   padding: 4px;
-  color: var(--color-tailwind-slate-700);
+  border-radius: 8px;
+  background-color: color-mix(in oklab, var(--rating-accent) 14%, white);
+  color: var(--color-tailwind-slate-950);
   text-align: center;
   cursor: pointer;
-}
-
-.questionnaire-ratings [data-tone="low"] {
-  color: #b91c1c;
-}
-
-.questionnaire-ratings [data-tone="high"] {
-  color: #15803d;
 }
 
 .questionnaire-ratings .option-item input[type="radio"] {
   margin-block-start: 0;
   color: inherit;
   cursor: inherit;
+}
+
+.questionnaire-ratings .option-item input[type="radio"]:checked {
+  color: var(--rating-accent);
 }
 
 .questionnaire-rating-label {

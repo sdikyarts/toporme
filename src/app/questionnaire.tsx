@@ -1,4 +1,4 @@
-import type { ReactNode } from "react";
+import type { CSSProperties, ReactNode } from "react";
 import { advanceProgress } from "./progress-action";
 import ProgressButton from "./progress-button";
 import { questionnaireScales } from "./questionnaire-scale";
@@ -46,9 +46,11 @@ export default async function Questionnaire({ idPrefix, lang, title, instruction
               <div className="questionnaire-ratings" data-count={ratings.length}>
                 {ratings.map((label, ratingIndex) => {
                   const value = ratingIndex + 1;
-                  const tone = ratingIndex < midpoint ? "low" : ratingIndex > midpoint ? "high" : "middle";
+                  const distance = (ratingIndex - midpoint) / midpoint;
+                  const endpoint = distance < 0 ? "#b91c1c" : "#15803d";
+                  const accent = `color-mix(in oklab, ${endpoint} ${Math.abs(distance) * 100}%, var(--color-tailwind-slate-600))`;
                   return (
-                    <label className="option option-item" key={value} data-tone={tone}>
+                    <label className="option option-item" key={value} style={{ "--rating-accent": accent } as CSSProperties}>
                       <span>{value}</span>
                       <input type="radio" name={name} value={value} defaultChecked={savedAnswer === value} required />
                       <span className="questionnaire-rating-label">{label}</span>
