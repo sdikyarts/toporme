@@ -6,6 +6,8 @@ import ChapterLayout, { chapterProgressForm } from "../chapter-layout";
 import ChapterNavigation from "../chapter-navigation";
 import { recordStepVisit, switchChapter } from "../progress-action";
 import type { Progress } from "../progress";
+import type { AttemptOutcome } from "../usability";
+import { useChapterUsability } from "./use-chapter-usability";
 import { latihanTitle, useLatihan } from "./latihan/latihan";
 import { latihanPanelName } from "./latihan/latihan-state";
 import Pengantar, { panelNames } from "./pengantar/pengantar";
@@ -37,6 +39,7 @@ export default function ChapterFlow({ progress: initialProgress, initialTutorial
     const switching = useRef(false);
     const isTutorial = progress === "tutorial" || progress === "replay-tutorial";
     const isLatihan = progress === "latihan" || progress === "replay-latihan";
+    useChapterUsability(isLatihan ? "latihan" : isTutorial ? "tutorial" : "pengantar", progress.startsWith("replay-"));
     const latihanProgress = initialProgress.startsWith("replay-") ? "replay-latihan" : "latihan";
     const latihan = useLatihan(isLatihan ? pageIndex : -1, storageScope ? `toporme:latihan:v1:${storageScope}:${latihanProgress}` : null);
     const isTutorialPanel = isTutorial && pageIndex === 1;
@@ -171,12 +174,12 @@ export default function ChapterFlow({ progress: initialProgress, initialTutorial
         setTutorialStage(layoutTour.length);
     }
 
-    async function goToOtherChapter(path: string) {
+    async function goToOtherChapter(path: string, outcome: AttemptOutcome = "completed") {
         if (switching.current) return;
         switching.current = true;
         setError(false);
         try {
-            const destination = await switchChapter(progress, path === "/latihan");
+            const destination = await switchChapter(progress, path === "/latihan", outcome);
             if (!destination) {
                 setError(true);
                 return;
@@ -207,8 +210,8 @@ export default function ChapterFlow({ progress: initialProgress, initialTutorial
             onSkip={(event) => {
                 event.preventDefault();
                 if (isLatihan) return;
-                if (isTutorial) void goToOtherChapter("/latihan");
-                else if (!isLastPage) void goToOtherChapter("/tutorial");
+                if (isTutorial) void goToOtherChapter("/latihan", "skipped");
+                else if (!isLastPage) void goToOtherChapter("/tutorial", "skipped");
             }}
             navigation={
                 <>

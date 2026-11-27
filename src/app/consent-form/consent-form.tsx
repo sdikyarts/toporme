@@ -50,6 +50,7 @@ export default function ConsentForm() {
                         </div>
                         <div className="consent-text-item">
                             <h1>Privasi dan Kerahasiaan</h1>
+                            <p>Jika Anda bersedia berpartisipasi, kami menggunakan PostHog untuk mencatat durasi, penyelesaian, dan interaksi pada percobaan pertama di bagian Pengantar, Tutorial, dan Latihan. Data interaksi digunakan untuk membuat peta klik. Nama, NPM, email, dan jawaban kuesioner tidak dikirim ke PostHog.</p>
                             <p>Penelitian ini merupakan bagian dari tahap evaluasi terhadap aplikasi Online Reflective Modular Exercise (ORME) yang bernama TopORME. Pada awalnya, teman-teman akan diminta untuk menjalankan aplikasi TopORME. Setelah menjalankan aplikasi TopORME, teman-teman akan diminta untuk mengisi kuesioner System Usability Scale (SUS) dan Metacognitive Laziness Scale (MLS), serta berpartisipasi dalam wawancara kontekstual singkat mengenai pengalaman menggunakan TopORME, termasuk pengalaman ketika mengerjakan latihan soal secara modular dan reflektif serta kendala yang dirasakan selama pengerjaan. Kontribusi partisipan yang diharapkan adalah menyelesaikan sesi pengerjaan ORME, kemudian mengikuti wawancara kontekstual ini hingga selesai, dengan durasi kurang lebih 30-45 menit.</p>
                         </div>
                         <div className="consent-text-item">

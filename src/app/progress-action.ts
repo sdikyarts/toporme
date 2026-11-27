@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { questionnaireScales } from "./questionnaire-scale";
+import { isUsabilityChapter, moveAndFinishAttempt, openFirstAttempt, postHogProject, type AttemptOutcome, type UsabilityChapter } from "./usability";
 import {
   getParticipantPosition, getParticipantProgress, nextProgress, participantSessionId,
   progressDatabase, progressPath, progressStep, unlockedProgress, type Progress, type Step,
@@ -15,7 +16,10 @@ const previousProgress = {
   "replay-latihan": "replay-tutorial",
 } as const;
 
-async function moveParticipant(expected: Progress, destination: Progress, answers?: number[]) {
+async function moveParticipant(
+  expected: Progress, destination: Progress,
+  { answers, consent, outcome }: { answers?: number[]; consent?: boolean; outcome?: AttemptOutcome } = {},
+) {
   const id = await participantSessionId();
   if (!id) return null;
 
@@ -28,6 +32,20 @@ async function moveParticipant(expected: Progress, destination: Progress, answer
   const sql = progressDatabase();
   const next = advances ? destination : position.progress;
   const lastVisited = progressStep(destination);
+  if (outcome && advances && isUsabilityChapter(expected)) {
+    const progress = await moveAndFinishAttempt(id, expected, outcome, position.progress, next, lastVisited);
+    return progress ? unlockedProgress(progress, lastVisited) : null;
+  }
+  if (consent !== undefined) {
+    const [updated] = await sql`
+      UPDATE participants
+      SET progress = ${next}, last_visited_step = ${lastVisited},
+          research_consent = ${consent}
+      WHERE id = ${id} AND progress = ${position.progress}
+      RETURNING progress
+    `;
+    return updated ? unlockedProgress(updated.progress as Progress, lastVisited) : null;
+  }
   if (answers) {
     const response = JSON.stringify(answers);
     const [updated] = await sql`
@@ -70,12 +88,22 @@ export async function recordStepVisit(step: Step) {
   return updated ? progress : null;
 }
 
-export async function switchChapter(expected: Progress, forwardFromTutorial = false) {
+export async function startChapterUsability(chapter: UsabilityChapter) {
+  if (!isUsabilityChapter(chapter)) return null;
+  const id = await participantSessionId();
+  const attempt = id ? await openFirstAttempt(id, chapter) : null;
+  return attempt ? { ...attempt, project: postHogProject() } : null;
+}
+
+export async function switchChapter(expected: Progress, forwardFromTutorial = false, outcome: AttemptOutcome = "completed") {
+  const attemptOutcome = outcome === "skipped" ? "skipped" : "completed";
   if (expected === "pengantar" || expected === "replay-pengantar") {
-    return moveParticipant(expected, nextProgress[expected]);
+    return moveParticipant(expected, nextProgress[expected], { outcome: attemptOutcome });
   }
   if (expected === "tutorial" || expected === "replay-tutorial") {
-    return moveParticipant(expected, forwardFromTutorial ? nextProgress[expected] : previousProgress[expected]);
+    return forwardFromTutorial
+      ? moveParticipant(expected, nextProgress[expected], { outcome: attemptOutcome })
+      : moveParticipant(expected, previousProgress[expected]);
   }
   if (expected === "latihan" || expected === "replay-latihan") {
     return moveParticipant(expected, previousProgress[expected]);
@@ -88,6 +116,9 @@ export async function advanceProgress(expected: Progress, formData: FormData) {
   if (expected === "consent-form") {
     const consent = formData.get("consent");
     if (consent !== "yes" && consent !== "no") redirect("/consent-form");
+    const progress = await moveParticipant(expected, nextProgress[expected], { consent: consent === "yes" })
+      ?? await getParticipantProgress();
+    redirect(progress ? progressPath(progress) : "/");
   }
   if (expected === "sus-form" || expected === "mls-form") {
     const [prefix, count] = expected === "sus-form" ? (["sus", 10] as const) : (["mls", 6] as const);
@@ -101,7 +132,7 @@ export async function advanceProgress(expected: Progress, formData: FormData) {
       }
       responses.push(Number(answer));
     }
-    const destination = await moveParticipant(expected, nextProgress[expected], responses);
+    const destination = await moveParticipant(expected, nextProgress[expected], { answers: responses });
     if (destination) {
       revalidatePath(progressPath(expected));
       redirect(progressPath(destination));
@@ -110,6 +141,7 @@ export async function advanceProgress(expected: Progress, formData: FormData) {
     redirect(current ? progressPath(current) : "/");
   }
 
-  const progress = await moveParticipant(expected, nextProgress[expected]) ?? await getParticipantProgress();
+  const progress = await moveParticipant(expected, nextProgress[expected], { outcome: expected === "latihan" ? "completed" : undefined })
+    ?? await getParticipantProgress();
   redirect(progress ? progressPath(progress) : "/");
 }
