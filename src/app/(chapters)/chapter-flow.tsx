@@ -2,11 +2,12 @@
 
 import { useSearchParams } from "next/navigation";
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
-import ChapterLayout, { chapterProgressForm } from "../chapter-layout";
+import ChapterLayout from "../chapter-layout";
 import ChapterNavigation from "../chapter-navigation";
-import { recordStepVisit, switchChapter } from "../progress-action";
+import { advanceProgress, recordStepVisit, switchChapter } from "../progress-action";
 import type { Progress } from "../progress";
 import type { AttemptOutcome } from "../usability";
+import { chapterTabTitles } from "./chapter-titles";
 import { useChapterUsability } from "./use-chapter-usability";
 import { latihanTitle, useLatihan } from "./latihan/latihan";
 import { latihanPanelName } from "./latihan/latihan-state";
@@ -47,12 +48,16 @@ export default function ChapterFlow({ progress: initialProgress, initialTutorial
     const isLastPage = pageIndex === lastPageIndex;
     const isTutorialComplete = isTutorialPanel && tutorialStage === tutorialLastStage;
     const isSusContinuation = latihan.canContinue && progress === "latihan";
+    const tutorialPercent = isTutorialPanel
+        ? (Math.max(0, tutorialStage - layoutTour.length) / (tutorialLastStage - layoutTour.length)) * 100
+        : 0;
 
     const chapterTitle = isLatihan ? latihanTitle : isTutorial ? tutorialTitle : "Pengantar Topological Sort";
+    const tabTitle = isLatihan ? chapterTabTitles.latihan : isTutorial ? chapterTabTitles.tutorial : chapterTabTitles.pengantar;
 
     useEffect(() => {
-        document.title = `${chapterTitle} | TopORME`;
-    }, [chapterTitle]);
+        document.title = `${tabTitle} - TopORME`;
+    }, [tabTitle]);
 
     useEffect(() => {
         if (!isTutorialComplete) return;
@@ -204,7 +209,7 @@ export default function ChapterFlow({ progress: initialProgress, initialTutorial
     return (
         <ChapterLayout
             progress={progress}
-            percent={isLatihan ? latihan.percent : isTutorial ? (tutorialStage / tutorialLastStage) * 100 : (pageIndex / lastPageIndex) * 100}
+            percent={isLatihan ? latihan.percent : isTutorial ? tutorialPercent : (pageIndex / lastPageIndex) * 100}
             title={chapterTitle}
             skipDisabled={isLatihan || (!isTutorial && isLastPage)}
             onSkip={(event) => {
@@ -215,12 +220,15 @@ export default function ChapterFlow({ progress: initialProgress, initialTutorial
             }}
             navigation={
                 <>
+                    {latihan.canContinue && (
+                        <form id="latihan-continuation" action={advanceProgress.bind(null, progress)} />
+                    )}
                     <ChapterNavigation
                         isFirstPage={!isTutorial && !isLatihan && pageIndex === 0}
                         prevLabel={isTutorial && !isTutorialPanel ? "Kembali ke Bagian 1" : undefined}
                         nextLabel={isLatihan ? (isSusContinuation ? "Lanjut ke SUS Form" : undefined) : isTutorialComplete ? "Lanjut ke Bagian 3" : !isTutorial && isLastPage ? "Lanjut ke Bagian 2" : undefined}
                         nextAccent={isLatihan ? isSusContinuation : isTutorialComplete || (!isTutorial && isLastPage)}
-                        nextForm={latihan.canContinue ? chapterProgressForm : undefined}
+                        nextForm={latihan.canContinue ? "latihan-continuation" : undefined}
                         nextDisabled={isLatihan ? pageIndex === 1 && !latihan.canContinue : isTutorialComplete && !continuationReady}
                         onPrev={goPrev}
                         onNext={latihan.canContinue ? undefined : goNext}

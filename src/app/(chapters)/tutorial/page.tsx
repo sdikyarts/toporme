@@ -1,7 +1,8 @@
 import ChapterPage from "../chapter-page";
+import { chapterTabTitles } from "../chapter-titles";
 import { tutorialPanelName, tutorialStageFromParam } from "./tutorial-flow";
 
-export const metadata = { title: "Tutorial Topological Sort" };
+export const metadata = { title: chapterTabTitles.tutorial };
 
 export default async function Page({ searchParams }: PageProps<"/tutorial">) {
   const { panel, stage } = await searchParams;

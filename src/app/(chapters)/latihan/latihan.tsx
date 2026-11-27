@@ -131,5 +131,8 @@ export function useLatihan(activePage: number, storageKey: string | null) {
         </>
     );
 
-    return { panels, canContinue, percent: queue.length / nodeNames.length * 100 };
+    const completedSteps = complete ? 0 : step + Number(review?.correct === true);
+    const percent = ((queue.length + completedSteps / tutorialCompletionStep) / nodeNames.length) * 100;
+
+    return { panels, canContinue, percent };
 }

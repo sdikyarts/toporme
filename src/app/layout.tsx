@@ -3,7 +3,7 @@ import "./utilities.tailwind.css";
 import "./globals.css";
 
 export const metadata = {
-  title: { default: "TopORME", template: "%s | TopORME" },
+  title: { default: "TopORME", template: "%s - TopORME" },
 };
 
 const roundedFonts = [

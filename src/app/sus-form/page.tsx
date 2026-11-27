@@ -1,7 +1,7 @@
 import FlowStep from "../flow-step";
 import Questionnaire from "../questionnaire";
 
-export const metadata = { title: "Kuesioner SUS" };
+export const metadata = { title: { absolute: "System Usability Scale -TopORME" } };
 
 const statements = [
   "Saya ingin menggunakan sistem ini lagi.",

@@ -14,8 +14,6 @@ type ChapterLayoutProps = {
     navigation: ReactNode;
 };
 
-export const chapterProgressForm = "chapter-progress";
-
 export default function ChapterLayout({ progress, percent, title = "Pengantar Topological Sort", skipDisabled, onSkip, children, navigation }: ChapterLayoutProps) {
     return (
         <main>
@@ -33,7 +31,7 @@ export default function ChapterLayout({ progress, percent, title = "Pengantar To
                             <h1>{title}</h1>
                             <ProgressBar percent={percent} label="Progress" />
                         </div>
-                        <form id={chapterProgressForm} action={advanceProgress.bind(null, progress)} onSubmit={onSkip}>
+                        <form action={advanceProgress.bind(null, progress)} onSubmit={onSkip}>
                             <ProgressButton className="chapter-button" disabled={skipDisabled}>Skip Bagian</ProgressButton>
                         </form>
                     </div>

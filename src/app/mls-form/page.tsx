@@ -1,7 +1,7 @@
 import FlowStep from "../flow-step";
 import Questionnaire from "../questionnaire";
 
-export const metadata = { title: "Metacognitive Laziness Scale (MLS)" };
+export const metadata = { title: "Metacognitive Laziness Scale" };
 
 const statements = [
   "I choose to use AI for assignments so I don’t have to think too hard.",
