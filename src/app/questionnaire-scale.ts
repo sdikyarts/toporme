@@ -1,4 +1,18 @@
 export const questionnaireScales = {
-  sus: { max: 7, start: "Sangat tidak setuju", end: "Sangat setuju" },
-  mls: { max: 5, start: "Not at all true of me", end: "Very true of me" },
+  sus: [
+    "Sangat tidak setuju",
+    "Tidak setuju",
+    "Agak tidak setuju",
+    "Netral",
+    "Agak setuju",
+    "Setuju",
+    "Sangat setuju",
+  ],
+  mls: [
+    "Not at all true of me",
+    "Slightly true of me",
+    "Moderately true of me",
+    "Mostly true of me",
+    "Very true of me",
+  ],
 } as const;

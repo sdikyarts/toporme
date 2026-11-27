@@ -127,7 +127,7 @@ export async function advanceProgress(expected: Progress, formData: FormData) {
       const answers = formData.getAll(`${prefix}-${index}`);
       const answer = answers[0];
       if (answers.length !== 1 || typeof answer !== "string" || !/^[1-7]$/.test(answer)
-          || Number(answer) > questionnaireScales[prefix].max) {
+          || Number(answer) > questionnaireScales[prefix].length) {
         redirect(progressPath(expected));
       }
       responses.push(Number(answer));

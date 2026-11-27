@@ -15,8 +15,8 @@ type QuestionnaireProps = {
 };
 
 export default async function Questionnaire({ idPrefix, lang, title, instructions, introduction, statements, source }: QuestionnaireProps) {
-  const { max, start, end } = questionnaireScales[idPrefix];
-  const ratings = Array.from({ length: max }, (_, index) => index + 1);
+  const ratings = questionnaireScales[idPrefix];
+  const midpoint = Math.floor(ratings.length / 2);
   const id = await participantSessionId();
   const sql = progressDatabase();
   const [response] = await sql`
@@ -39,20 +39,22 @@ export default async function Questionnaire({ idPrefix, lang, title, instruction
         </svg>
         {statements.map((statement, index) => {
           const name = `${idPrefix}-${index + 1}`;
+          const savedAnswer = savedAnswers?.[index];
           return (
-            <fieldset className="sus-question" key={name} aria-describedby={`${name}-scale`}>
+            <fieldset className="sus-question" key={name}>
               <legend>{index + 1}. {statement}</legend>
-              <div className="questionnaire-ratings" data-count={max}>
-                {ratings.map((value) => (
-                  <label className="option option-item" key={value}>
-                    <span>{value}</span>
-                    <input type="radio" name={name} value={value} defaultChecked={savedAnswers?.[index] === value} required />
-                  </label>
-                ))}
-              </div>
-              <div className="questionnaire-scale" id={`${name}-scale`}>
-                <span>1 = {start}</span>
-                <span>{max} = {end}</span>
+              <div className="questionnaire-ratings" data-count={ratings.length}>
+                {ratings.map((label, ratingIndex) => {
+                  const value = ratingIndex + 1;
+                  const tone = ratingIndex < midpoint ? "low" : ratingIndex > midpoint ? "high" : "middle";
+                  return (
+                    <label className="option option-item" key={value} data-tone={tone}>
+                      <span>{value}</span>
+                      <input type="radio" name={name} value={value} defaultChecked={savedAnswer === value} required />
+                      <span className="questionnaire-rating-label">{label}</span>
+                    </label>
+                  );
+                })}
               </div>
             </fieldset>
           );
