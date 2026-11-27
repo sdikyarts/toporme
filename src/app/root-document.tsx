@@ -1,4 +1,5 @@
 import Script from "next/script";
+import type { ReactNode } from "react";
 import "./utilities.tailwind.css";
 import "./globals.css";
 
@@ -21,7 +22,7 @@ const initialFontStyles = roundedFonts.map(({ weight, url }) => `
   }
 `).join("") + '.font-loading body { visibility: hidden; }';
 
-export default function RootLayout({ children }: LayoutProps<"/">) {
+export default function RootDocument({ children }: { children: ReactNode }) {
   return (
     <html lang="en" className="font-loading" suppressHydrationWarning>
       <head>

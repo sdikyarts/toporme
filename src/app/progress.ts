@@ -53,16 +53,22 @@ export function progressDatabase() {
   return neon(url);
 }
 
-export async function getParticipantPosition() {
+export type ParticipantPosition = { progress: Progress; lastVisited: Progress; researchConsent: boolean };
+
+export async function getParticipantPosition(): Promise<ParticipantPosition | null> {
   const id = await participantSessionId();
   if (!id) return null;
   const sql = progressDatabase();
   const [participant] = await sql`
-    SELECT progress, COALESCE(last_visited_step, progress) AS last_visited
+    SELECT progress, COALESCE(last_visited_step, progress) AS last_visited, research_consent
     FROM participants WHERE id = ${id}
   `;
   if (!participant) return null;
-  return { progress: participant.progress as Progress, lastVisited: participant.last_visited as Progress };
+  return {
+    progress: participant.progress as Progress,
+    lastVisited: participant.last_visited as Progress,
+    researchConsent: participant.research_consent === true,
+  };
 }
 
 export async function getParticipantProgress() {

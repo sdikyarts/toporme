@@ -203,7 +203,7 @@ export default function TutorialStep({ stage, playing, onTogglePlayback, onTourP
     const helpButtons = (
         <div className="tutorial-help-buttons">
             <div className="worksheet-hint-anchor" ref={hintAnchor}>
-                <button ref={hintTrigger} type="button" className="chapter-button tutorial-icon-button tutorial-hint-button" aria-label="Hint" title="Hint" data-usability-feature="hint"
+                <button ref={hintTrigger} type="button" className="chapter-button tutorial-icon-button tutorial-hint-button" aria-label="Hint" title="Hint"
                     aria-expanded={hintOpen} aria-controls={hintId} onClick={() => setHintOpen((open) => !open)}>
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                         <path d="M9 18h6m-5 4h4m-5-7c0-2-3-3-3-7a6 6 0 0 1 12 0c0 4-3 5-3 7" />
@@ -214,7 +214,7 @@ export default function TutorialStep({ stage, playing, onTogglePlayback, onTourP
                     {practice?.hint ?? "Fitur Hint belum tersedia di tutorial."}
                 </div>
             </div>
-            <button type="button" className="chapter-button tutorial-icon-button tutorial-material-button" aria-label="Baca Materi" title="Baca Materi" data-usability-feature="material"
+            <button type="button" className="chapter-button tutorial-icon-button tutorial-material-button" aria-label="Baca Materi" title="Baca Materi"
                 aria-haspopup="dialog" onClick={() => materialDialog.current?.showModal()}>
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                     <path d="M12 6v15M3 4h5a4 4 0 0 1 4 4 4 4 0 0 1 4-4h5v15h-5a4 4 0 0 0-4 2 4 4 0 0 0-4-2H3z" />
@@ -223,7 +223,7 @@ export default function TutorialStep({ stage, playing, onTogglePlayback, onTourP
             </button>
         </div>
     );
-    const checkButton = <button type="button" className="chapter-button tutorial-check-button" disabled={practice?.checkDisabled} data-usability-feature="check"
+    const checkButton = <button type="button" className="chapter-button tutorial-check-button" disabled={practice?.checkDisabled}
         onClick={practice?.onCheck ?? (() => notifyUnavailable("Periksa"))}>{practice?.checkLabel ?? "Periksa"}</button>;
 
     return (

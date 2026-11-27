@@ -2,13 +2,13 @@ import { Suspense, type ReactNode } from "react";
 import { redirect } from "next/navigation";
 import { advanceProgress } from "./progress-action";
 import ProgressButton from "./progress-button";
-import { getParticipantPosition, progressPath, unlockedProgress, type Progress, type Step } from "./progress";
+import { getParticipantPosition, progressPath, unlockedProgress, type ParticipantPosition, type Progress, type Step } from "./progress";
 import StepVisit from "./step-visit";
 
 type StepProps = {
   step: Step;
   title: string;
-  children?: ReactNode | ((progress: Progress) => ReactNode);
+  children?: ReactNode | ((progress: Progress, position: ParticipantPosition) => ReactNode);
 };
 
 async function CurrentStep({ step, title, children }: StepProps) {
@@ -20,13 +20,16 @@ async function CurrentStep({ step, title, children }: StepProps) {
   return (
     <>
       <StepVisit step={step} />
-      <StepContent step={step} title={title} progress={progress}>{children}</StepContent>
+      <StepContent step={step} title={title} progress={progress} position={position}>{children}</StepContent>
     </>
   );
 }
 
-function StepContent({ step, title, children, progress }: StepProps & { progress: Progress }) {
-  if (typeof children === "function") return children(progress);
+function StepContent({ step, title, children, progress, position }: StepProps & {
+  progress: Progress;
+  position: ParticipantPosition;
+}) {
+  if (typeof children === "function") return children(progress, position);
   if (children !== undefined) return children;
 
   if (step === "consent-form" || step === "sus-form" || step === "mls-form") return null;

@@ -1,7 +1,7 @@
 ﻿import { Suspense } from "react";
 import { redirect } from "next/navigation";
-import LoginForm from "./login-form";
-import { getParticipantProgress, progressPath } from "./progress";
+import LoginForm from "../login-form";
+import { getParticipantProgress, progressPath } from "../progress";
 
 async function ResumeOrLogin() {
   const progress = await getParticipantProgress();

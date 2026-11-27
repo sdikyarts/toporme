@@ -1,5 +1,5 @@
-import FlowStep from "../flow-step";
-import Questionnaire from "../questionnaire";
+import FlowStep from "../../flow-step";
+import Questionnaire from "../../questionnaire";
 
 export const metadata = { title: { absolute: "System Usability Scale -TopORME" } };
 

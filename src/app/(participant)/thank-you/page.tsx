@@ -1,6 +1,6 @@
-import FlowStep from "../flow-step";
-import { logoutParticipant } from "../participant-action";
-import ProgressButton from "../progress-button";
+import FlowStep from "../../flow-step";
+import { logoutParticipant } from "../../participant-action";
+import ProgressButton from "../../progress-button";
 
 export const metadata = { title: "Thank You!" };
 

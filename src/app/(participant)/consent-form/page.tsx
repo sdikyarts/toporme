@@ -1,5 +1,5 @@
-import FlowStep from "../flow-step";
-import ConsentForm from "./consent-form";
+import FlowStep from "../../flow-step";
+import ConsentForm from "../../consent-form/consent-form";
 
 export const metadata = { title: "Consent Form" };
 

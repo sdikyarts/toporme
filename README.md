@@ -35,11 +35,10 @@ The easiest way to deploy your Next.js app is to use the [Vercel Platform](https
 
 Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
 
-## Chapter usability in PostHog
+## Chapter usability
 
-1. Apply the Neon migrations with `npm run db:migrate`.
-2. For the Vercel Marketplace integration, confirm that `POSTHOG_PROJECT_API_KEY` and `POSTHOG_HOST` are available in Production. For manual setup, set `NEXT_PUBLIC_POSTHOG_PROJECT_TOKEN` and `NEXT_PUBLIC_POSTHOG_HOST` instead. Redeploy if you changed any settings. Use your PostHog ingestion host, such as `https://us.i.posthog.com` or `https://eu.i.posthog.com`.
-3. Build a funnel from `chapter_started` to `chapter_completed` for each chapter. Filter both steps by `chapter` and `attempt_number = 1` and use a 30-minute conversion window. Chart the median of `duration_ms` on `chapter_completed` and count `chapter_skipped` separately.
-4. In PostHog Heatmap settings, add the three production chapter URL patterns, such as `https://toporme.vercel.app/tutorial*`. Use the wildcard to include worksheet query parameters. Compare phone and desktop viewports separately. If the in-app preview shows the login screen, open PostHog's browser extension while signed into TopORME. Use `chapter_feature_used` for exact counts of Hint, Baca Materi, and Periksa clicks.
+Apply the Neon migrations with `npm run db:migrate`. For participants with saved research consent, Neon records first attempts in `chapter_first_attempts`.
 
-Each chapter's window starts when the participant first enters that chapter, including its title screen. A refresh resumes the same window. Skips, completions, and expired windows cannot be replaced. Elapsed time includes time away from the tab. Only participants with saved research consent are included. Session replay is disabled. Neon retains outcomes in `chapter_first_attempts` even if PostHog delivery fails.
+Each 30-minute window starts when the participant first enters the chapter, including its title screen. Refreshing keeps the same window. Elapsed time includes time away from the tab. The first attempt stays on record after a skip, completion, or expiry.
+
+Set `CLARITY_PROJECT_ID` in `.env.local` for a local pilot and in the deployment environment for a hosted study. Clarity loads on chapter routes for consenting participants whose current progress is in the study chapters. In Clarity, open **Heatmaps → Click maps** and filter by `/pengantar`, `/tutorial`, or `/latihan`.

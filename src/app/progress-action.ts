@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { questionnaireScales } from "./questionnaire-scale";
-import { isUsabilityChapter, moveAndFinishAttempt, openFirstAttempt, postHogProject, type AttemptOutcome, type UsabilityChapter } from "./usability";
+import { isUsabilityChapter, moveAndFinishAttempt, openFirstAttempt, type AttemptOutcome, type UsabilityChapter } from "./usability";
 import {
   getParticipantPosition, getParticipantProgress, nextProgress, participantSessionId,
   progressDatabase, progressPath, progressStep, unlockedProgress, type Progress, type Step,
@@ -93,10 +93,9 @@ export async function recordStepVisit(step: Step) {
 }
 
 export async function startChapterUsability(chapter: UsabilityChapter) {
-  if (!isUsabilityChapter(chapter)) return null;
+  if (!isUsabilityChapter(chapter)) return;
   const id = await participantSessionId();
-  const attempt = id ? await openFirstAttempt(id, chapter) : null;
-  return attempt ? { ...attempt, project: postHogProject() } : null;
+  if (id) await openFirstAttempt(id, chapter);
 }
 
 export async function switchChapter(expected: Progress, forwardFromTutorial = false, outcome: AttemptOutcome = "completed") {
