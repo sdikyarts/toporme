@@ -1,4 +1,5 @@
 import type { MouseEvent } from "react";
+import GraphInDegree from "../../graph-in-degree";
 
 export const practiceNodes = {
     A: [80, 220], B: [280, 94], C: [680, 94],
@@ -114,20 +115,16 @@ export default function PracticeGraph({ step, queue, selected, removed, marked, 
                             aria-pressed={step === 1 && !sorted ? chosen : undefined}
                             disabled={sorted || Boolean(review) || (step !== 1 && !canQueue)}
                             onClick={(event) => onNode(node, event.currentTarget)}><span>{node}</span></button>
-                        <label className="in-degree-container" data-review={degreeFeedback}>
-                            <span>In-Degree:</span>
-                            <input className="in-degree-value" type="text" inputMode="numeric" maxLength={1}
-                                aria-label={`In-degree ${node}`} placeholder="?" value={values[node] ?? ""}
-                                aria-invalid={degreeFeedback === "wrong" || undefined}
-                                disabled={sorted || (chosen && outgoingRemoved)} readOnly={step !== 0 || Boolean(review)}
-                                onChange={(event) => onValue(node, event.target.value.replace(/\D/g, ""))}
-                                onKeyDown={(event) => {
-                                    if (event.key === "Enter" && !event.nativeEvent.isComposing) {
-                                        event.preventDefault();
-                                        if (!event.repeat && !review) onCheck();
-                                    }
-                                }} />
-                        </label>
+                        <GraphInDegree node={node} review={degreeFeedback} maxLength={1} value={values[node] ?? ""}
+                            aria-invalid={degreeFeedback === "wrong" || undefined}
+                            disabled={sorted || (chosen && outgoingRemoved)} readOnly={step !== 0 || Boolean(review)}
+                            onChange={(event) => onValue(node, event.target.value.replace(/\D/g, ""))}
+                            onKeyDown={(event) => {
+                                if (event.key === "Enter" && !event.nativeEvent.isComposing) {
+                                    event.preventDefault();
+                                    if (!event.repeat && !review) onCheck();
+                                }
+                            }} />
                     </div>
                 );
             })}

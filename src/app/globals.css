@@ -48,6 +48,7 @@
   container: app-viewport / size;
   block-size: calc(100 * var(--layout-dvh));
   zoom: var(--layout-scale);
+  background-color: var(--color-tailwind-slate-300);
 
   --page-padding: clamp(8px, calc(3.35 * var(--layout-vw)), 48px);
   --sorting-radius: 8px;
@@ -83,7 +84,6 @@ body {
   flex-direction: column;
   align-items: center;
   width: 100%;
-  background-color: var(--color-tailwind-slate-300);
 }
 
 .login-container {
@@ -1298,7 +1298,7 @@ a.consent-form-button:hover {
   background-color: var(--color-tailwind-blue-300);
 }
 
-.urutan-sorting-container:has(.urutan-sorting-queue[hidden]) {
+.urutan-sorting-container[data-compact] {
   min-height: 0;
 }
 
@@ -1346,8 +1346,13 @@ a.consent-form-button:hover {
   outline-offset: 2px;
 }
 
+.urutan-sorting-container:not([data-compact]) .urutan-sorting-toggle svg {
+  order: 1;
+}
+
 .urutan-sorting-toggle[aria-expanded="false"] svg {
-  rotate: -90deg;
+  flex: none;
+  rotate: 90deg;
 }
 
 .urutan-sorting-queue {
@@ -1367,8 +1372,38 @@ a.consent-form-button:hover {
   background-color: var(--color-tailwind-blue-50);
 }
 
-.urutan-sorting-queue[hidden] {
-  display: none;
+.urutan-sorting-container[data-compact] .urutan-sorting-content {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  gap: 8px;
+}
+
+.urutan-sorting-container[data-compact] .urutan-sorting-content h1 {
+  width: auto;
+}
+
+.urutan-sorting-container[data-compact] .urutan-sorting-toggle {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.urutan-sorting-container[data-compact] .urutan-sorting-queue {
+  grid-column: 2;
+  grid-row: 1;
+  flex-wrap: nowrap;
+  min-height: 44px;
+  overflow-x: auto;
+  scrollbar-width: thin;
+}
+
+.urutan-sorting-queue:focus-visible {
+  outline: 2px solid var(--color-tailwind-blue-900);
+  outline-offset: -2px;
+}
+
+.urutan-sorting-container[data-compact] .tutorial-graph-controls {
+  flex-wrap: nowrap;
 }
 
 .graph-container {
@@ -1501,6 +1536,10 @@ a.consent-form-button:hover {
 .tutorial-check-button[data-demo-only] {
   background-color: var(--color-tailwind-slate-600);
   cursor: not-allowed;
+}
+
+.tutorial-check-button > svg {
+  display: none;
 }
 
 [data-tour-target="check"] .tutorial-check-button {
@@ -1688,9 +1727,6 @@ a.consent-form-button:hover {
   inset-inline-start: 50%;
   inset-block-end: calc(100% + 8px);
   translate: -50% 0;
-  font-size: 16px;
-  font-weight: 700;
-  white-space: nowrap;
 }
 
 .practice-node[data-label-below="true"] .in-degree-container {
@@ -1927,25 +1963,17 @@ a.consent-form-button:hover {
   background: var(--color-tailwind-blue-300);
 }
 
-.in-degree-content {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  gap: 6px;
-}
-
-.in-degree-attribute {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-}
-
-.in-degree-attribute h1 {
+.in-degree-label {
   color: var(--color-tailwind-slate-950);
   font-family: var(--font-primary);
   font-size: 16px;
   font-weight: 700;
   line-height: 20px;
+  white-space: nowrap;
+}
+
+.in-degree-container[data-review] .in-degree-label {
+  color: inherit;
 }
 
 .in-degree-value {
@@ -2230,25 +2258,9 @@ a.consent-form-button:hover {
   }
 }
 
-body:has(:is(#tutorial-step, #latihan-step):not([inert])) {
-  --page-padding-block: clamp(
-    8px,
-    max(calc(2.5 * var(--layout-vh)), calc((100 * var(--layout-vh) - 760px) / 8 + 20px)),
-    var(--page-padding)
-  );
-}
-
-.pengantar-container:has(:is(#tutorial-step, #latihan-step):not([inert])) {
-  height: auto;
-  min-height: calc(100 * var(--layout-dvh) - 2 * var(--page-padding-block));
-  padding: clamp(10px, calc(2.5 * var(--layout-vw)), 32px);
-}
-
 .page-content:has(> :is(#tutorial-step, #latihan-step):not([inert])) {
-  --worksheet-page-padding: clamp(8px, calc(2.5 * var(--layout-vw)), 32px);
+  --worksheet-page-padding: 32px;
   position: relative;
-  grid-template-rows: minmax(min-content, 1fr);
-  min-height: 0;
   padding: var(--worksheet-page-padding);
 }
 
@@ -2258,11 +2270,19 @@ body:has(:is(#tutorial-step, #latihan-step):not([inert])) {
   margin: 0;
 }
 
-.page-content > :is(#tutorial-step, #latihan-step) {
-  grid-template-rows: minmax(min-content, 1fr);
+@container app-viewport (max-width: 1050px) or (max-height: 760px) {
+  .page-content:has(> :is(#tutorial-step, #latihan-step):not([inert])) {
+    --worksheet-page-padding: clamp(8px, calc(2.5 * var(--layout-vw)), 24px);
+    grid-template-rows: minmax(min-content, 1fr);
+    min-height: 0;
+  }
+
+  .page-content > :is(#tutorial-step, #latihan-step) {
+    grid-template-rows: minmax(min-content, 1fr);
+  }
 }
 
-@container app-viewport (width > 1050px) {
+@container app-viewport (width > 1050px) and (max-height: 760px) {
   :is(#tutorial-step, #latihan-step) .orme-container {
     min-height: 0;
   }
@@ -2403,6 +2423,45 @@ body:has(:is(#tutorial-step, #latihan-step):not([inert])) {
 
 }
 
+@container tutorial-sorting (max-width: 340px) {
+  .urutan-sorting-container[data-compact] .urutan-sorting-content {
+    --sorting-node-size: 24px;
+  }
+
+  .urutan-sorting-container[data-compact] .urutan-sorting-content,
+  .urutan-sorting-container[data-compact] :is(.tutorial-graph-controls, .tutorial-help-buttons) {
+    gap: 4px;
+  }
+
+  .urutan-sorting-container[data-compact] .urutan-sorting-content h1 {
+    max-width: 74px;
+    font-size: 13px;
+    line-height: 16px;
+  }
+
+  .urutan-sorting-container[data-compact] .urutan-sorting-queue {
+    padding-inline: 0;
+  }
+
+  .urutan-sorting-container[data-compact] .tutorial-queue-node > span {
+    font-size: 14px;
+    line-height: 16px;
+  }
+
+  .urutan-sorting-container[data-compact] .tutorial-check-button {
+    width: 44px;
+    padding: 0;
+  }
+
+  .urutan-sorting-container[data-compact] .tutorial-check-button > svg {
+    display: block;
+  }
+
+  .urutan-sorting-container[data-compact] .tutorial-check-button > span {
+    display: none;
+  }
+}
+
 @container app-viewport (max-width: 280px) {
   .tutorial-tour-skip {
     flex-basis: 100%;
@@ -2443,14 +2502,15 @@ body:has(:is(#tutorial-step, #latihan-step):not([inert])) {
     --graph-scale: min(1, tan(atan2(100cqw, 760px)), tan(atan2(calc(100cqh - 24px), 394px)));
   }
 
-  .practice-node .in-degree-container {
-    height: auto;
-    padding-block: 2px;
+  .practice-node .in-degree-container::before {
+    content: "";
+    position: absolute;
+    inset-inline: 0;
+    inset-block: min(0px, calc(36px - 44px / var(--graph-scale))) 0;
   }
 
-  .practice-node .in-degree-value {
-    min-width: calc(44px / var(--graph-scale));
-    height: calc(44px / var(--graph-scale));
+  .practice-node[data-label-below="true"] .in-degree-container::before {
+    inset-block: 0 min(0px, calc(36px - 44px / var(--graph-scale)));
   }
 
   .practice-node .node-circle:enabled {

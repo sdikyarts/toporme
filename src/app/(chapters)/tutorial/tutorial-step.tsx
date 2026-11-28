@@ -1,4 +1,5 @@
 import { useEffect, useId, useLayoutEffect, useRef, useState, type PointerEvent, type ReactNode } from "react";
+import GraphInDegree from "../../graph-in-degree";
 import { demonstration, layoutTour, tutorialCompletionStep } from "./tutorial-flow";
 import Definisi from "../pengantar/definisi";
 import Langkah from "../pengantar/langkah";
@@ -446,18 +447,19 @@ export default function TutorialStep({ stage, playing, onTogglePlayback, onTourP
                 </aside>
             )}
             <div className="orme-content-right">
-                <div className="urutan-sorting-container">
+                <div className="urutan-sorting-container" data-compact={!queueExpanded || undefined}>
                     <div className="urutan-sorting-content">
                         <h1>
                             <button type="button" className="urutan-sorting-toggle" aria-expanded={queueExpanded} aria-controls={queueId}
                                 onClick={() => setQueueExpanded((expanded) => !expanded)}>
-                                <span>Urutan Sorting</span>
                                 <svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true">
                                     <path d="m4 6 4 4 4-4" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
                                 </svg>
+                                <span>Urutan Sorting</span>
                             </button>
                         </h1>
-                        <div id={queueId} ref={queueList} className="urutan-sorting-queue" hidden={!queueExpanded} aria-live={practice ? "polite" : undefined} aria-label={frame?.queue.length ? `Urutan Sorting: ${frame.queue.join(", ")}` : "Urutan Sorting kosong"}>
+                        <div id={queueId} ref={queueList} className="urutan-sorting-queue" role="group" tabIndex={queueExpanded ? undefined : 0}
+                            aria-live={practice ? "polite" : undefined} aria-label={frame?.queue.length ? `Urutan Sorting: ${frame.queue.join(", ")}` : "Urutan Sorting kosong"}>
                             {frame?.queue.map((node) => (
                                 <span key={node} className="node-circle tutorial-queue-node" data-queued-by-click={practice ? "" : undefined}><span>{node}</span></span>
                             ))}
@@ -470,11 +472,16 @@ export default function TutorialStep({ stage, playing, onTogglePlayback, onTourP
                                 className="chapter-button tutorial-check-button"
                                 disabled={practice?.checkDisabled ?? true}
                                 data-demo-only={!practice || undefined}
+                                aria-label="Periksa"
                                 aria-haspopup={practice ? "dialog" : undefined}
                                 title={practice ? undefined : "Periksa tersedia di Latihan"}
                                 onClick={practice?.onCheck}
                             >
-                                Periksa
+                                <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" strokeWidth="2"
+                                    strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                                    <path d="m5 12 4 4L19 6" />
+                                </svg>
+                                <span>Periksa</span>
                             </button>
                         </div>
                     </div>
@@ -507,29 +514,13 @@ export default function TutorialStep({ stage, playing, onTogglePlayback, onTourP
                                 </div>
                                 <div className="nodes-v1">
                                     <div className="node-v1">
-                                        <div className="in-degree-container">
-                                            <div className="in-degree-content">
-                                                <div className="in-degree-attribute">
-                                                    <h1>In-Degree</h1>
-                                                    <h1>:</h1>
-                                                </div>
-                                                <input className="in-degree-value" type="text" inputMode="numeric" placeholder="?" aria-label="In-degree B" readOnly disabled={inactiveDegrees?.includes("B")} value={demo?.degrees?.B ?? ""} />
-                                            </div>
-                                        </div>
+                                        <GraphInDegree node="B" readOnly disabled={inactiveDegrees?.includes("B")} value={demo?.degrees?.B ?? ""} />
                                         <div className="node-circle" data-selected={demo?.selected === "B"} data-sorted={frame?.queue.includes("B")}>
                                             <h1>B</h1>
                                         </div>
                                     </div>
                                     <div className="node-v1">
-                                        <div className="in-degree-container">
-                                            <div className="in-degree-content">
-                                                <div className="in-degree-attribute">
-                                                    <h1>In-Degree</h1>
-                                                    <h1>:</h1>
-                                                </div>
-                                                <input className="in-degree-value" type="text" inputMode="numeric" placeholder="?" aria-label="In-degree C" readOnly disabled={inactiveDegrees?.includes("C")} value={demo?.degrees?.C ?? ""} />
-                                            </div>
-                                        </div>
+                                        <GraphInDegree node="C" readOnly disabled={inactiveDegrees?.includes("C")} value={demo?.degrees?.C ?? ""} />
                                         <div className="node-circle" data-selected={demo?.selected === "C"} data-sorted={frame?.queue.includes("C")}>
                                             <h1>C</h1>
                                         </div>
@@ -538,29 +529,13 @@ export default function TutorialStep({ stage, playing, onTogglePlayback, onTourP
                                         <div className="node-circle" data-selected={demo?.selected === "A"} data-sorted={frame?.queue.includes("A")}>
                                             <h1>A</h1>
                                         </div>
-                                        <div className="in-degree-container">
-                                            <div className="in-degree-content">
-                                                <div className="in-degree-attribute">
-                                                    <h1>In-Degree</h1>
-                                                    <h1>:</h1>
-                                                </div>
-                                                <input className="in-degree-value" type="text" inputMode="numeric" placeholder="?" aria-label="In-degree A" readOnly disabled={inactiveDegrees?.includes("A")} value={demo?.degrees?.A ?? ""} />
-                                            </div>
-                                        </div>
+                                        <GraphInDegree node="A" readOnly disabled={inactiveDegrees?.includes("A")} value={demo?.degrees?.A ?? ""} />
                                     </div>
                                     <div className="node-v1">
                                         <div className="node-circle" data-selected={demo?.selected === "D"} data-sorted={frame?.queue.includes("D")}>
                                             <h1>D</h1>
                                         </div>
-                                        <div className="in-degree-container">
-                                            <div className="in-degree-content">
-                                                <div className="in-degree-attribute">
-                                                    <h1>In-Degree</h1>
-                                                    <h1>:</h1>
-                                                </div>
-                                                <input className="in-degree-value" type="text" inputMode="numeric" placeholder="?" aria-label="In-degree D" readOnly disabled={inactiveDegrees?.includes("D")} value={demo?.degrees?.D ?? ""} />
-                                            </div>
-                                        </div>
+                                        <GraphInDegree node="D" readOnly disabled={inactiveDegrees?.includes("D")} value={demo?.degrees?.D ?? ""} />
                                     </div>
                                 </div>
                             </div>
