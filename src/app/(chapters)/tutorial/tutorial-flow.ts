@@ -30,7 +30,7 @@ type Frame = {
 export const tutorialCompletionStep = 4;
 export const tutorialPanelName = "tutorial-step";
 export const tutorialCompletionStage = "complete";
-export const tutorialCompletionPath = `/tutorial?panel=${tutorialPanelName}&stage=${tutorialCompletionStage}`;
+export const tutorialCompletionPath = `/tutorial#panel=${tutorialPanelName}&stage=${tutorialCompletionStage}`;
 
 function buildDemonstration(): Frame[] {
     const frames: Frame[] = [{ iteration: 1, step: 0, queue: [], removed: [] }];
