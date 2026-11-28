@@ -15,6 +15,35 @@ import Pengantar, { panelNames } from "./pengantar/pengantar";
 import Tutorial, { tutorialTitle } from "./tutorial/tutorial";
 import { layoutTour, tutorialCompletionPath, tutorialCompletionStage, tutorialLastStage, tutorialPanelName, tutorialStageFromParam } from "./tutorial/tutorial-flow";
 
+function chapterPosition(pathname: string, params: Pick<URLSearchParams, "get">) {
+    const panel = params.get("panel");
+    const isTutorialPanel = pathname === "/tutorial" && panel === tutorialPanelName;
+    return {
+        pageIndex: pathname === "/latihan" ? Number(panel === latihanPanelName)
+            : pathname === "/tutorial" ? Number(isTutorialPanel)
+            : Math.max(0, panelNames.indexOf(panel ?? "")),
+        tutorialStage: isTutorialPanel ? tutorialStageFromParam(params.get("stage")) : 0,
+    };
+}
+
+function chapterParams(url: URL) {
+    return url.hash.startsWith("#panel=") ? new URLSearchParams(url.hash.slice(1)) : url.searchParams;
+}
+
+function replaceChapterPosition(url: URL, panel?: string, tutorialStage?: number) {
+    const fragment = new URLSearchParams();
+    if (panel) fragment.set("panel", panel);
+    if (tutorialStage !== undefined) {
+        fragment.set("stage", tutorialStage === tutorialLastStage ? tutorialCompletionStage : String(tutorialStage));
+    }
+    const previous = url.href;
+    if (url.searchParams.has("panel")) url.searchParams.delete("panel");
+    if (url.searchParams.has("stage")) url.searchParams.delete("stage");
+    // Clarity treats pathname and query changes as page visits and ignores fragments.
+    url.hash = fragment.toString();
+    if (url.href !== previous) window.history.replaceState(null, "", url);
+}
+
 export default function ChapterFlow({ progress: initialProgress, initialTutorialStage, initialLatihanOpen, storageScope }: {
     progress: Progress;
     initialTutorialStage?: number;
@@ -66,14 +95,27 @@ export default function ChapterFlow({ progress: initialProgress, initialTutorial
     }, [isTutorialComplete]);
 
     useLayoutEffect(() => {
-        if (!isTutorialPanel) return;
         const url = new URL(window.location.href);
-        if (url.pathname !== "/tutorial" || url.searchParams.get("panel") !== tutorialPanelName) return;
-        const stage = isTutorialComplete ? tutorialCompletionStage : String(tutorialStage);
-        if (url.searchParams.get("stage") === stage) return;
-        url.searchParams.set("stage", stage);
-        window.history.replaceState(null, "", `${url.pathname}${url.search}${url.hash}`);
-    }, [isTutorialPanel, isTutorialComplete, tutorialStage]);
+        const params = chapterParams(url);
+        const position = chapterPosition(url.pathname, params);
+        if (params !== url.searchParams) {
+            // The server cannot read the fragment. Restore it before the browser paints.
+            // eslint-disable-next-line react-hooks/set-state-in-effect
+            setChapter((chapter) => ({ ...chapter, pageIndex: position.pageIndex }));
+            setTutorialStage(position.tutorialStage);
+        }
+        if (url.searchParams.has("panel") || url.searchParams.has("stage")) {
+            const panel = position.pageIndex > 0 ? params.get("panel") ?? undefined : undefined;
+            replaceChapterPosition(url, panel, panel === tutorialPanelName ? position.tutorialStage : undefined);
+        }
+    }, []);
+
+    function goToTutorialStage(stage: number) {
+        const url = new URL(window.location.href);
+        if (url.pathname !== "/tutorial" || chapterParams(url).get("panel") !== tutorialPanelName) return;
+        replaceChapterPosition(url, tutorialPanelName, stage);
+        setTutorialStage(stage);
+    }
 
     useEffect(() => {
         if (!playing || !isTutorialPanel || isTutorialComplete) return;
@@ -82,32 +124,25 @@ export default function ChapterFlow({ progress: initialProgress, initialTutorial
                 setContinuationReady(false);
                 setPlaying(false);
             }
-            setTutorialStage(tutorialStage + 1);
+            goToTutorialStage(tutorialStage + 1);
         }, 1200);
         return () => window.clearTimeout(timer);
     }, [playing, isTutorialPanel, isTutorialComplete, tutorialStage]);
 
     useEffect(() => {
         async function restoreChapter() {
-            const { pathname, search } = window.location;
+            const url = new URL(window.location.href);
+            const { pathname } = url;
             const step = pathname === "/latihan" ? "latihan" : pathname === "/tutorial" ? "tutorial" : pathname === "/pengantar" ? "pengantar" : null;
             if (!step) return;
-            const params = new URLSearchParams(search);
-            const panel = params.get("panel");
+            const position = chapterPosition(pathname, chapterParams(url));
             try {
                 const visited = await recordStepVisit(step);
-                if (!visited || window.location.pathname !== pathname || window.location.search !== search) return;
+                if (!visited || window.location.href !== url.href) return;
                 setPlaying(false);
                 setContinuationReady(false);
-                if (step === "tutorial") {
-                    setTutorialStage(panel === tutorialPanelName ? tutorialStageFromParam(params.get("stage")) : 0);
-                }
-                setChapter({
-                    progress: visited,
-                    pageIndex: step === "latihan" ? Number(panel === latihanPanelName)
-                        : step === "tutorial" ? Number(panel === tutorialPanelName)
-                        : Math.max(0, panelNames.indexOf(panel ?? "")),
-                });
+                setTutorialStage(position.tutorialStage);
+                setChapter({ progress: visited, pageIndex: position.pageIndex });
             } catch {
                 setError(true);
             }
@@ -122,11 +157,8 @@ export default function ChapterFlow({ progress: initialProgress, initialTutorial
         setPlaying(false);
         if (isTutorial) setTutorialStage(0);
         setChapter({ progress, pageIndex: index });
-        const url = new URL(window.location.href);
-        url.searchParams.delete("stage");
-        if (index === 0) url.searchParams.delete("panel");
-        else url.searchParams.set("panel", isLatihan ? latihanPanelName : isTutorial ? tutorialPanelName : panelNames[index]);
-        window.history.replaceState(null, "", `${url.pathname}${url.search}${url.hash}`);
+        const panel = index === 0 ? undefined : isLatihan ? latihanPanelName : isTutorial ? tutorialPanelName : panelNames[index];
+        replaceChapterPosition(new URL(window.location.href), panel, panel === tutorialPanelName ? 0 : undefined);
         window.scrollTo({ top: 0, behavior: "instant" });
     }
 
@@ -141,7 +173,7 @@ export default function ChapterFlow({ progress: initialProgress, initialTutorial
             }
             if (tutorialStage + 1 === tutorialLastStage) setContinuationReady(false);
             setPlaying(false);
-            setTutorialStage(tutorialStage + 1);
+            goToTutorialStage(tutorialStage + 1);
         } else if (isTutorial) {
             goToPage(1);
         } else if (isLastPage) {
@@ -157,9 +189,9 @@ export default function ChapterFlow({ progress: initialProgress, initialTutorial
             void goToOtherChapter(tutorialCompletionPath);
         } else if (isTutorialPanel && tutorialStage > 0) {
             setPlaying(false);
-            setTutorialStage(tutorialStage - 1);
+            goToTutorialStage(tutorialStage - 1);
         } else if (isTutorial && !isTutorialPanel) {
-            void goToOtherChapter("/pengantar?panel=langkah");
+            void goToOtherChapter("/pengantar#panel=langkah");
         } else {
             goToPage(pageIndex - 1);
         }
@@ -167,7 +199,7 @@ export default function ChapterFlow({ progress: initialProgress, initialTutorial
 
     function toggleDemonstration() {
         if (isTutorialComplete) {
-            setTutorialStage(layoutTour.length);
+            goToTutorialStage(layoutTour.length);
             setPlaying(true);
         } else {
             setPlaying(!playing);
@@ -176,7 +208,7 @@ export default function ChapterFlow({ progress: initialProgress, initialTutorial
 
     function skipIntroduction() {
         setPlaying(false);
-        setTutorialStage(layoutTour.length);
+        goToTutorialStage(layoutTour.length);
     }
 
     async function goToOtherChapter(path: string, outcome: AttemptOutcome = "completed") {
