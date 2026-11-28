@@ -1493,7 +1493,8 @@ a.consent-form-button:hover {
   display: none;
 }
 
-@container tutorial-sorting (min-width: 580px) {
+/* Leave room for the heading, controls, and all six Latihan queue nodes. */
+@container tutorial-sorting (min-width: 50rem) {
   .tutorial-help-buttons .tutorial-icon-button {
     width: auto;
     padding-inline: 12px;
