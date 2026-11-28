@@ -35,13 +35,33 @@ export default function RootDocument({ children }: { children: ReactNode }) {
       <body suppressHydrationWarning>
         <Script id="load-rounded-font" strategy="beforeInteractive">{`
           (function () {
+            const root = document.documentElement;
+            const touchOnly = window.matchMedia('(pointer: coarse) and (hover: none)');
+
+            function matchDesktopLayout() {
+              const isTouchOnly = navigator.maxTouchPoints > 0 && touchOnly.matches;
+              if (isTouchOnly || window !== window.top || !window.outerWidth || !window.innerWidth) {
+                root.style.removeProperty('--layout-scale');
+                return;
+              }
+
+              // Round the viewport ratio to account for window borders.
+              const pageZoom = Math.round(window.outerWidth / window.innerWidth * 20) / 20;
+              const layoutScale = 0.8 / Math.min(1, Math.max(0.8, pageZoom));
+              root.style.setProperty('--layout-scale', layoutScale);
+            }
+
+            matchDesktopLayout();
+            window.addEventListener('resize', matchDesktopLayout);
+            touchOnly.addEventListener('change', matchDesktopLayout);
+
             async function revealPage() {
               if (document.fonts) {
                 await Promise.allSettled(${JSON.stringify(roundedFonts.map(({ weight }) => weight))}.map(weight =>
                   document.fonts.load(weight + ' 16px "SF Pro Rounded"')
                 ));
               }
-              document.documentElement.classList.remove('font-loading');
+              root.classList.remove('font-loading');
             }
             if (document.readyState === 'loading') {
               document.addEventListener('DOMContentLoaded', revealPage, { once: true });

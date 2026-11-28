@@ -75,14 +75,15 @@ export default function TutorialStep({ stage, playing, onTogglePlayback, onTourP
 
         const target = node.getBoundingClientRect();
         if (!target.width || !queuedFrom.width) return;
+        const zoom = document.body.currentCSSZoom ?? 1;
         const movingNode = node.cloneNode(true) as HTMLElement;
         movingNode.setAttribute("aria-hidden", "true");
         Object.assign(movingNode.style, {
             position: "fixed",
-            left: `${target.left}px`,
-            top: `${target.top}px`,
-            width: `${target.width}px`,
-            height: `${target.height}px`,
+            left: `${target.left / zoom}px`,
+            top: `${target.top / zoom}px`,
+            width: `${target.width / zoom}px`,
+            height: `${target.height / zoom}px`,
             transformOrigin: "top left",
             pointerEvents: "none",
             zIndex: "10",
@@ -91,7 +92,7 @@ export default function TutorialStep({ stage, playing, onTogglePlayback, onTourP
         document.body.append(movingNode);
         const duration = 300;
         const travel = movingNode.animate([
-            { transform: `translate(${queuedFrom.left - target.left}px, ${queuedFrom.top - target.top}px) scale(${queuedFrom.width / target.width})` },
+            { transform: `translate(${(queuedFrom.left - target.left) / zoom}px, ${(queuedFrom.top - target.top) / zoom}px) scale(${queuedFrom.width / target.width})` },
             { transform: "none" },
         ], { duration, easing: "ease-in-out" });
         const reveal = node.animate([{ opacity: 0 }, { opacity: 0 }], { duration });
@@ -184,7 +185,7 @@ export default function TutorialStep({ stage, playing, onTogglePlayback, onTourP
             const current = card.getBoundingClientRect();
             if (current.top >= bounds.top && current.bottom <= bounds.bottom) return;
             const offset = current.top < bounds.top ? current.top - bounds.top : current.bottom - bounds.bottom;
-            list.scrollTo({ top: list.scrollTop + offset, behavior: reducedMotion ? "instant" : "smooth" });
+            list.scrollTo({ top: list.scrollTop + offset / (list.currentCSSZoom ?? 1), behavior: reducedMotion ? "instant" : "smooth" });
         }
 
         const timeout = window.setTimeout(() => scrollToCurrent(list, card), reducedMotion ? 0 : 260);
@@ -196,7 +197,8 @@ export default function TutorialStep({ stage, playing, onTogglePlayback, onTourP
         if (!drag.current || !list) return;
         const travel = list.clientHeight - event.currentTarget.offsetHeight;
         if (travel > 0) {
-            list.scrollTop = drag.current.scrollTop + (event.clientY - drag.current.y) * (list.scrollHeight - list.clientHeight) / travel;
+            const distance = (event.clientY - drag.current.y) / (list.currentCSSZoom ?? 1);
+            list.scrollTop = drag.current.scrollTop + distance * (list.scrollHeight - list.clientHeight) / travel;
         }
     }
 
