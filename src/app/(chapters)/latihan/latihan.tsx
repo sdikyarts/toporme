@@ -24,11 +24,13 @@ export function useLatihan(activePage: number, storageKey: string | null) {
     const [marked, setMarked] = useState<string[]>([]);
     const [values, setValues] = useState<Partial<Record<PracticeNode, string>>>({});
     const [review, setReview] = useState<{ correct: boolean; message: string } | null>(null);
+    const [feedbackOpen, setFeedbackOpen] = useState(false);
     const [queuedFrom, setQueuedFrom] = useState<DOMRect | null>(null);
 
     useLayoutEffect(() => {
         const saved = storageKey && readLatihanSnapshot(storageKey);
         if (saved) {
+            // eslint-disable-next-line react-hooks/set-state-in-effect -- Restore session storage before the worksheet paints.
             setStep(saved.step);
             setQueue(saved.queue);
             setSelected(saved.selected);
@@ -50,6 +52,7 @@ export function useLatihan(activePage: number, storageKey: string | null) {
     }, [restored, storageKey, step, queue, selected, marked, values, review]);
 
     const complete = queue.length === nodeNames.length;
+    const checkDisabled = step >= 3 || complete;
     const canContinue = activePage === 1 && complete && step === tutorialCompletionStep;
     const iteration = Math.min(queue.length + 1, nodeNames.length);
     const remaining = practiceEdges.filter(([from]) => !queue.includes(from));
@@ -62,17 +65,9 @@ export function useLatihan(activePage: number, storageKey: string | null) {
     const incorrect = nodeNames.filter((node) => !queue.includes(node) && values[node] !== String(degree(node)));
 
     function check() {
-        if (complete) return;
-
-        if (review) {
-            if (review.correct) setStep(step + 1);
-            else {
-                if (step === 1) setSelected(null);
-                if (step === 2) setMarked([]);
-            }
-            setReview(null);
-            return;
-        }
+        if (checkDisabled) return;
+        setFeedbackOpen(true);
+        if (review) return;
 
         if (step === 0) {
             setReview(incorrect.length === 0
@@ -88,6 +83,17 @@ export function useLatihan(activePage: number, storageKey: string | null) {
                 ? { correct: true, message: "Jawaban benar, semua outgoing edge sudah dipilih!" }
                 : { correct: false, message: "Jawaban belum tepat. Pilih semua panah keluar dari node terpilih saja." });
         }
+    }
+
+    function resolveReview() {
+        if (!feedbackOpen || !review) return;
+        if (review.correct) setStep(step + 1);
+        else {
+            if (step === 1) setSelected(null);
+            if (step === 2) setMarked([]);
+        }
+        setReview(null);
+        setFeedbackOpen(false);
     }
 
     function activateNode(node: PracticeNode, button: HTMLButtonElement) {
@@ -114,11 +120,13 @@ export function useLatihan(activePage: number, storageKey: string | null) {
             <section id={latihanPanelName} className="chapter-panel" aria-label="Lembar latihan" inert={activePage !== 1}>
                 {restored && <TutorialStep stage={iteration * 5 + step} practice={{
                     step, iteration, queue,
-                    review,
+                    active: activePage === 1,
+                    review, feedbackOpen: activePage === 1 && feedbackOpen,
                     queuedFrom,
-                    checkLabel: review ? (review.correct ? "Lanjut" : "Ulangi") : "Periksa",
-                    checkDisabled: step === 3 || complete,
+                    checkDisabled,
                     onCheck: check,
+                    onDismissFeedback: () => setFeedbackOpen(false),
+                    onResolveFeedback: resolveReview,
                     hint: practiceHints[step],
                     graph: <PracticeGraph step={step} queue={queue} selected={selected} removed={removed} marked={marked} values={values}
                         review={review ? (review.correct ? "correct" : "wrong") : undefined}

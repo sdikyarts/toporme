@@ -1,3 +1,5 @@
+import type { MouseEvent } from "react";
+
 export const practiceNodes = {
     A: [80, 220], B: [280, 94], C: [680, 94],
     D: [480, 220], E: [280, 292], F: [680, 292],
@@ -25,6 +27,30 @@ type Props = {
     onEdge: (edge: string) => void;
     onCheck: () => void;
 };
+
+function nearestEdge(event: MouseEvent<SVGGElement>, edge: string) {
+    const svg = event.currentTarget.ownerSVGElement;
+    const transform = svg?.getScreenCTM();
+    if (!event.detail || !svg || !transform) return edge;
+
+    const pointer = new DOMPoint(event.clientX, event.clientY).matrixTransform(transform.inverse());
+    let nearest = edge;
+    let minimum = Infinity;
+    for (const line of svg.querySelectorAll<SVGLineElement>('[role="button"] .practice-edge-hit')) {
+        const left = line.x1.baseVal.value;
+        const top = line.y1.baseVal.value;
+        const dx = line.x2.baseVal.value - left;
+        const dy = line.y2.baseVal.value - top;
+        const fraction = ((pointer.x - left) * dx + (pointer.y - top) * dy) / (dx * dx + dy * dy);
+        const along = Math.max(0, Math.min(1, fraction));
+        const distance = Math.hypot(pointer.x - left - along * dx, pointer.y - top - along * dy);
+        if (distance < minimum) {
+            nearest = line.parentElement?.getAttribute("data-edge") ?? edge;
+            minimum = distance;
+        }
+    }
+    return nearest;
+}
 
 export default function PracticeGraph({ step, queue, selected, removed, marked, values, review, incorrectDegrees, outgoing, onValue, onNode, onEdge, onCheck }: Props) {
     const outgoingRemoved = step >= 2 && outgoing.every((edge) => removed.includes(edge));
@@ -54,16 +80,16 @@ export default function PracticeGraph({ step, queue, selected, removed, marked, 
                     const arrowhead = `${baseX - dy * 12.5},${baseY + dx * 12.5} ${tipX},${tipY} ${baseX + dy * 12.5},${baseY - dx * 12.5}`;
 
                     return (
-                        <g key={edge} className="practice-edge" data-removed={gone} data-marked={isMarked} data-highlighted={highlighted} data-review={feedback}
+                        <g key={edge} className="practice-edge" data-edge={edge} data-removed={gone} data-marked={isMarked} data-highlighted={highlighted} data-review={feedback}
                             role={interactive ? "button" : undefined} tabIndex={interactive ? 0 : undefined}
                             aria-label={interactive ? `Edge ${from} ke ${to}` : undefined}
                             aria-pressed={interactive ? isMarked : undefined}
                             aria-hidden={!interactive}
-                            onClick={interactive ? () => onEdge(edge) : undefined}
+                            onClick={interactive ? (event) => onEdge(nearestEdge(event, edge)) : undefined}
                             onKeyDown={interactive ? (event) => {
                                 if (event.key === "Enter" || event.key === " ") {
                                     event.preventDefault();
-                                    onEdge(edge);
+                                    if (!event.repeat) onEdge(edge);
                                 }
                             } : undefined}>
                             <line className="practice-edge-hit" {...points} />
@@ -96,7 +122,10 @@ export default function PracticeGraph({ step, queue, selected, removed, marked, 
                                 disabled={sorted || (chosen && outgoingRemoved)} readOnly={step !== 0 || Boolean(review)}
                                 onChange={(event) => onValue(node, event.target.value.replace(/\D/g, ""))}
                                 onKeyDown={(event) => {
-                                    if (event.key === "Enter" && !event.repeat && !review) onCheck();
+                                    if (event.key === "Enter" && !event.nativeEvent.isComposing) {
+                                        event.preventDefault();
+                                        if (!event.repeat && !review) onCheck();
+                                    }
                                 }} />
                         </label>
                     </div>

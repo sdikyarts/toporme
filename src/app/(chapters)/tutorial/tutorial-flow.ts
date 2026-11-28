@@ -6,7 +6,7 @@ export const layoutTour = [
     { target: "graph", title: "Graf dan in-degree", description: "Panah menunjukkan arah edge. Angka di dekat setiap node menunjukkan jumlah edge yang masih masuk." },
     { target: "hint", title: "Hint", description: "Di lembar kerja, Hint memberi petunjuk untuk langkah yang sedang dikerjakan." },
     { target: "material", title: "Baca Materi", description: "Di lembar kerja, Baca Materi membuka kembali penjelasan topological sort." },
-    { target: "check", title: "Periksa", description: "Di lembar kerja, Periksa mengecek jawabanmu. Di tutorial ini, demonstrasi akan menampilkan hasilnya secara otomatis." },
+    { target: "check", title: "Periksa", description: "Di Latihan, klik Periksa untuk mengecek jawabanmu. Di Tutorial, hasil setiap langkah ditampilkan otomatis." },
     { target: "skip", title: "Skip Bagian", description: "Gunakan Skip Bagian jika ingin langsung ke latihan. Pilih Next untuk mulai melihat demonstrasi." },
 ] as const;
 

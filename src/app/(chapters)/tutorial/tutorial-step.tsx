@@ -19,16 +19,19 @@ export type TutorialStepProps = {
     onTourNext?: () => void;
     onTourSkip?: () => void;
     practice?: {
+        active: boolean;
         step: number;
         iteration: number;
         queue: readonly string[];
         graph: ReactNode;
         review: { correct: boolean; message: string } | null;
-        checkLabel: string;
+        feedbackOpen: boolean;
         checkDisabled: boolean;
         queuedFrom: DOMRect | null;
         hint: string;
         onCheck: () => void;
+        onDismissFeedback: () => void;
+        onResolveFeedback: () => void;
     };
 };
 
@@ -44,6 +47,32 @@ function GraphViewport({ practice, children }: { practice: boolean; children: Re
     );
 }
 
+function revealStep(list: HTMLDivElement, card: HTMLElement) {
+    let cancelled = false;
+    const details = card.querySelector(".tutorial-step-details");
+
+    function scrollToCard() {
+        if (cancelled) return;
+        const bounds = list.getBoundingClientRect();
+        const target = card.getBoundingClientRect();
+        const zoom = list.currentCSSZoom ?? 1;
+        const bottom = bounds.bottom - 6 * zoom;
+        const offset = target.bottom > bottom ? target.bottom - bottom : Math.min(0, target.top - bounds.top);
+        if (offset === 0) return;
+
+        list.scrollTo({
+            top: list.scrollTop + offset / zoom,
+            behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "instant" : "smooth",
+        });
+    }
+
+    const animations = details?.getAnimations() ?? [];
+    if (animations.length) void Promise.allSettled(animations.map((animation) => animation.finished)).then(scrollToCard);
+    else scrollToCard();
+
+    return () => { cancelled = true; };
+}
+
 export default function TutorialStep({ stage, playing, onTogglePlayback, onTourPrev, onTourNext, onTourSkip, practice }: TutorialStepProps) {
     const tour = practice ? undefined : layoutTour[stage];
     const demo = practice ? undefined : demonstration[stage - layoutTour.length];
@@ -52,30 +81,87 @@ export default function TutorialStep({ stage, playing, onTogglePlayback, onTourP
     const complete = frame?.step === tutorialCompletionStep;
     const queuedFrom = practice?.queuedFrom;
     const queueList = useRef<HTMLDivElement>(null);
+    const queueId = useId();
     const descriptionId = useId();
     const hintId = useId();
     const materialId = useId();
+    const feedbackTitleId = useId();
+    const feedbackMessageId = useId();
+    const worksheet = useRef<HTMLDivElement>(null);
     const materialDialog = useRef<HTMLDialogElement>(null);
-    const hintAnchor = useRef<HTMLDivElement>(null);
+    const feedbackDialog = useRef<HTMLDialogElement>(null);
+    const feedbackAction = useRef<HTMLButtonElement>(null);
+    const checkButton = useRef<HTMLButtonElement>(null);
+    const feedbackOpen = Boolean(practice?.feedbackOpen && practice.review);
+    const hintPopup = useRef<HTMLDivElement>(null);
     const hintTrigger = useRef<HTMLButtonElement>(null);
     const [hintOpen, setHintOpen] = useState(false);
-    const [notification, setNotification] = useState({ message: "", visible: false });
+    const [queueExpanded, setQueueExpanded] = useState(true);
+    const [wasComplete, setWasComplete] = useState(complete);
     const [expansion, setExpansion] = useState<{ stage: number; cards: Record<number, boolean> }>({ stage, cards: {} });
     const steps = useRef<HTMLDivElement>(null);
+    const expandedCard = useRef<HTMLButtonElement>(null);
     const thumb = useRef<HTMLDivElement>(null);
     const drag = useRef<{ y: number; scrollTop: number } | null>(null);
+
+    if (complete !== wasComplete) {
+        setWasComplete(complete);
+        if (complete) setQueueExpanded(true);
+    }
+
+    useLayoutEffect(() => {
+        const dialog = feedbackDialog.current;
+        if (!dialog) return;
+        if (feedbackOpen && !dialog.open) {
+            dialog.showModal();
+            feedbackAction.current?.focus();
+        } else if (!feedbackOpen && dialog.open) {
+            dialog.close();
+            if (checkButton.current?.disabled) {
+                worksheet.current?.querySelector<HTMLButtonElement>(".practice-node .node-circle:enabled")?.focus();
+            } else {
+                checkButton.current?.focus({ preventScroll: true });
+            }
+        }
+    }, [feedbackOpen]);
+
+    const practiceActive = practice?.active;
+    useEffect(() => {
+        if (!practiceActive) return;
+
+        function handleEnter(event: KeyboardEvent) {
+            if (event.key !== "Enter" || event.defaultPrevented || event.isComposing ||
+                event.altKey || event.ctrlKey || event.metaKey || event.shiftKey || materialDialog.current?.open) return;
+
+            const modal = feedbackDialog.current?.open;
+            const action = modal ? feedbackAction.current : checkButton.current;
+            const target = event.target;
+            if (event.repeat) {
+                if (modal || target === action) event.preventDefault();
+                return;
+            }
+            if (target instanceof Element && target.closest('button, input, select, textarea, summary, a[href], [contenteditable], [role="button"]')) return;
+            if (!action || action.disabled) return;
+
+            event.preventDefault();
+            action.click();
+        }
+
+        document.addEventListener("keydown", handleEnter, true);
+        return () => document.removeEventListener("keydown", handleEnter, true);
+    }, [practiceActive]);
 
     useLayoutEffect(() => {
         const list = queueList.current;
         const node = list?.lastElementChild;
         if (!queuedFrom || !list || !(node instanceof HTMLElement)) return;
 
-        list.scrollLeft = list.scrollWidth;
         if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
 
         const target = node.getBoundingClientRect();
         if (!target.width || !queuedFrom.width) return;
         const zoom = document.body.currentCSSZoom ?? 1;
+        const { backgroundColor, borderColor } = getComputedStyle(node);
         const movingNode = node.cloneNode(true) as HTMLElement;
         movingNode.setAttribute("aria-hidden", "true");
         Object.assign(movingNode.style, {
@@ -84,6 +170,8 @@ export default function TutorialStep({ stage, playing, onTogglePlayback, onTourP
             top: `${target.top / zoom}px`,
             width: `${target.width / zoom}px`,
             height: `${target.height / zoom}px`,
+            backgroundColor,
+            borderColor,
             transformOrigin: "top left",
             pointerEvents: "none",
             zIndex: "10",
@@ -105,116 +193,116 @@ export default function TutorialStep({ stage, playing, onTogglePlayback, onTourP
         };
     }, [queuedFrom]);
 
-    useEffect(() => {
-        if (!notification.visible) return;
-        const timeout = window.setTimeout(() => setNotification({ ...notification, visible: false }), 3200);
-        return () => window.clearTimeout(timeout);
-    }, [notification]);
-
-    useEffect(() => {
+    useLayoutEffect(() => {
         if (!hintOpen) return;
+        const popup = hintPopup.current!;
+        const trigger = hintTrigger.current!;
+        const sorting = trigger.closest<HTMLElement>(".urutan-sorting-container")!;
+        const worksheet = sorting.closest<HTMLElement>(".orme-container")!;
 
-        function dismissOutside(event: globalThis.PointerEvent) {
-            if (event.target instanceof Node && !hintAnchor.current?.contains(event.target)) setHintOpen(false);
+        function positionHint() {
+            const zoom = popup.currentCSSZoom ?? 1;
+            const inset = 8 * zoom;
+            const gap = 6 * zoom;
+            const triggerBounds = trigger.getBoundingClientRect();
+            const sortingBounds = sorting.getBoundingClientRect();
+            const worksheetBounds = worksheet.getBoundingClientRect();
+            const { clientWidth, clientHeight } = document.documentElement;
+            const left = Math.max(inset, sortingBounds.left + inset);
+            const right = Math.min(clientWidth - inset, sortingBounds.right - inset);
+            const top = Math.max(inset, worksheetBounds.top + inset);
+            const bottom = Math.min(clientHeight - inset, worksheetBounds.bottom - inset);
+
+            popup.style.maxWidth = `${Math.max(0, right - left) / zoom}px`;
+            popup.style.maxHeight = `${Math.max(0, bottom - top) / zoom}px`;
+            const { width, height } = popup.getBoundingClientRect();
+            const below = triggerBounds.bottom + gap;
+            const above = triggerBounds.top - gap - height;
+            const x = Math.max(left, Math.min(triggerBounds.left, right - width));
+            const y = below + height <= bottom ? below : Math.max(top, above);
+            popup.style.left = `${x / zoom}px`;
+            popup.style.top = `${y / zoom}px`;
+            popup.style.visibility = triggerBounds.bottom > top && triggerBounds.top < bottom ? "visible" : "hidden";
         }
 
-        function dismissOnEscape(event: KeyboardEvent) {
-            if (event.key !== "Escape") return;
-            setHintOpen(false);
-            hintTrigger.current?.focus();
-        }
-
-        document.addEventListener("pointerdown", dismissOutside, true);
-        document.addEventListener("keydown", dismissOnEscape);
+        const observer = new ResizeObserver(positionHint);
+        observer.observe(popup);
+        observer.observe(sorting);
+        observer.observe(worksheet);
+        window.addEventListener("resize", positionHint);
+        window.addEventListener("scroll", positionHint, true);
+        positionHint();
         return () => {
-            document.removeEventListener("pointerdown", dismissOutside, true);
-            document.removeEventListener("keydown", dismissOnEscape);
+            observer.disconnect();
+            window.removeEventListener("resize", positionHint);
+            window.removeEventListener("scroll", positionHint, true);
+            popup.style.removeProperty("visibility");
         };
     }, [hintOpen]);
-
-    function notifyUnavailable(feature: string) {
-        setNotification({ message: `Fitur ${feature} belum tersedia di tutorial.`, visible: true });
-    }
 
     useLayoutEffect(() => {
         const list = steps.current!;
         const indicator = thumb.current!;
-        let hideThumb: ReturnType<typeof setTimeout> | undefined;
-
         function updateThumb() {
             const { clientHeight, scrollHeight, scrollTop } = list;
             const overflow = scrollHeight - clientHeight;
             const canScroll = clientHeight > 0 && overflow > 1;
             list.toggleAttribute("data-fade-top", canScroll && scrollTop > 1);
             list.toggleAttribute("data-fade-bottom", canScroll && scrollTop < overflow - 1);
-            indicator.hidden = clientHeight === 0 || overflow <= 0;
+            indicator.hidden = !canScroll;
             if (indicator.hidden) return;
             const height = Math.max(24, (clientHeight / scrollHeight) * clientHeight);
             indicator.style.height = `${height}px`;
             indicator.style.top = `${(scrollTop / overflow) * (clientHeight - height)}px`;
         }
 
-        function onScroll() {
-            updateThumb();
-            if (indicator.hidden) return;
-            indicator.dataset.scrolling = "true";
-            clearTimeout(hideThumb);
-            hideThumb = setTimeout(() => { delete indicator.dataset.scrolling; }, 900);
-        }
         const observer = new ResizeObserver(updateThumb);
         observer.observe(list);
         for (const card of list.children) observer.observe(card);
-        list.addEventListener("scroll", onScroll, { passive: true });
+        list.addEventListener("scroll", updateThumb, { passive: true });
         list.addEventListener("animationend", updateThumb);
         updateThumb();
         return () => {
             observer.disconnect();
-            list.removeEventListener("scroll", onScroll);
+            list.removeEventListener("scroll", updateThumb);
             list.removeEventListener("animationend", updateThumb);
-            clearTimeout(hideThumb);
         };
     }, [complete]);
 
     useLayoutEffect(() => {
         const list = steps.current;
         const card = list?.querySelector<HTMLElement>('[aria-current="step"]');
-        if (!list || !card) return;
-        const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-        function scrollToCurrent(list: HTMLElement, card: HTMLElement) {
-            const bounds = list.getBoundingClientRect();
-            const current = card.getBoundingClientRect();
-            if (current.top >= bounds.top && current.bottom <= bounds.bottom) return;
-            const offset = current.top < bounds.top ? current.top - bounds.top : current.bottom - bounds.bottom;
-            list.scrollTo({ top: list.scrollTop + offset / (list.currentCSSZoom ?? 1), behavior: reducedMotion ? "instant" : "smooth" });
-        }
-
-        const timeout = window.setTimeout(() => scrollToCurrent(list, card), reducedMotion ? 0 : 260);
-        return () => window.clearTimeout(timeout);
+        if (list && card) return revealStep(list, card);
     }, [stage, practice?.review]);
+
+    useLayoutEffect(() => {
+        const card = expandedCard.current;
+        expandedCard.current = null;
+        if (steps.current && card && expansion.stage === stage) return revealStep(steps.current, card);
+    }, [expansion, stage]);
 
     function dragThumb(event: PointerEvent<HTMLDivElement>) {
         const list = steps.current;
         if (!drag.current || !list) return;
-        const travel = list.clientHeight - event.currentTarget.offsetHeight;
+        const travel = list.getBoundingClientRect().height - event.currentTarget.getBoundingClientRect().height;
         if (travel > 0) {
-            const distance = (event.clientY - drag.current.y) / (list.currentCSSZoom ?? 1);
+            const distance = event.clientY - drag.current.y;
             list.scrollTop = drag.current.scrollTop + distance * (list.scrollHeight - list.clientHeight) / travel;
         }
     }
 
     const helpButtons = (
         <div className="tutorial-help-buttons">
-            <div className="worksheet-hint-anchor" ref={hintAnchor}>
-                <button ref={hintTrigger} type="button" className="chapter-button tutorial-icon-button tutorial-hint-button" aria-label="Hint" title="Hint"
-                    aria-expanded={hintOpen} aria-controls={hintId} onClick={() => setHintOpen((open) => !open)}>
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                        <path d="M9 18h6m-5 4h4m-5-7c0-2-3-3-3-7a6 6 0 0 1 12 0c0 4-3 5-3 7" />
-                    </svg>
-                    <span>Hint</span>
-                </button>
-                <div id={hintId} className="worksheet-hint-popup" hidden={!hintOpen} role="status">
-                    {practice?.hint ?? "Fitur Hint belum tersedia di tutorial."}
-                </div>
+            <button ref={hintTrigger} type="button" className="chapter-button tutorial-icon-button tutorial-hint-button" aria-label="Hint" title="Hint"
+                aria-expanded={hintOpen} aria-controls={hintId} popoverTarget={hintId}>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                    <path d="M9 18h6m-5 4h4m-5-7c0-2-3-3-3-7a6 6 0 0 1 12 0c0 4-3 5-3 7" />
+                </svg>
+                <span>Hint</span>
+            </button>
+            <div ref={hintPopup} id={hintId} className="worksheet-hint-popup" popover="auto" role="status"
+                onToggle={(event) => setHintOpen(event.currentTarget.matches(":popover-open"))}>
+                {practice?.hint ?? "Fitur Hint belum tersedia di tutorial."}
             </div>
             <button type="button" className="chapter-button tutorial-icon-button tutorial-material-button" aria-label="Baca Materi" title="Baca Materi"
                 aria-haspopup="dialog" onClick={() => materialDialog.current?.showModal()}>
@@ -225,11 +313,8 @@ export default function TutorialStep({ stage, playing, onTogglePlayback, onTourP
             </button>
         </div>
     );
-    const checkButton = <button type="button" className="chapter-button tutorial-check-button" disabled={practice?.checkDisabled}
-        onClick={practice?.onCheck ?? (() => notifyUnavailable("Periksa"))}>{practice?.checkLabel ?? "Periksa"}</button>;
-
     return (
-        <div className="orme-container" data-tour-target={tour?.target} data-demo-complete={complete}>
+        <div ref={worksheet} className="orme-container" data-tour-target={tour?.target} data-demo-complete={complete}>
             <dialog
                 ref={materialDialog}
                 className="worksheet-material-dialog"
@@ -243,10 +328,30 @@ export default function TutorialStep({ stage, playing, onTogglePlayback, onTourP
                         <h2 id={materialId}>Materi Pengantar</h2>
                         <button type="button" className="chapter-button" onClick={() => materialDialog.current?.close()}>Tutup</button>
                     </header>
-                    <Definisi showIllustration={false} />
-                    <Langkah showIllustration={false} />
+                    <div className="worksheet-material-body" tabIndex={0} role="region" aria-labelledby={materialId}>
+                        <Definisi showIllustration={false} />
+                        <Langkah showIllustration={false} />
+                    </div>
                 </div>
             </dialog>
+            {practice && (
+                <dialog ref={feedbackDialog} className="worksheet-material-dialog practice-feedback-dialog"
+                    aria-labelledby={feedbackTitleId} aria-describedby={feedbackMessageId}
+                    onCancel={(event) => { event.preventDefault(); practice.onDismissFeedback(); }}
+                    onClick={(event) => { if (event.target === event.currentTarget) practice.onDismissFeedback(); }}>
+                    <div className="practice-feedback-panel">
+                        <h2 id={feedbackTitleId}>Hasil pemeriksaan</h2>
+                        <p id={feedbackMessageId}>{practice.review?.message}</p>
+                        <div className="practice-feedback-actions">
+                            <button type="button" className="chapter-button practice-feedback-dismiss" onClick={practice.onDismissFeedback}>Tutup</button>
+                            <button ref={feedbackAction} type="button" className="chapter-button practice-feedback-action"
+                                data-correct={practice.review?.correct} onClick={practice.onResolveFeedback}>
+                                {practice.review?.correct ? "Lanjut" : "Coba lagi"}
+                            </button>
+                        </div>
+                    </div>
+                </dialog>
+            )}
             <div className="orme-content-left">
                 <div className="langkah-langkah-container">
                     <div className="langkah-langkah-content">
@@ -274,10 +379,13 @@ export default function TutorialStep({ stage, playing, onTogglePlayback, onTourP
                                             aria-controls={id}
                                             data-inactive={Boolean(frame) && !current}
                                             data-review={practice && index < practice.step ? "correct" : review ? (review.correct ? "correct" : "wrong") : undefined}
-                                            onClick={() => setExpansion((previous) => ({
-                                                stage,
-                                                cards: { ...(previous.stage === stage ? previous.cards : {}), [index]: !expanded },
-                                            }))}
+                                            onClick={(event) => {
+                                                expandedCard.current = expanded ? null : event.currentTarget;
+                                                setExpansion((previous) => ({
+                                                    stage,
+                                                    cards: { ...(previous.stage === stage ? previous.cards : {}), [index]: !expanded },
+                                                }));
+                                            }}
                                         >
                                             <span className="langkah-langkah-card-content">
                                                 <span className="langkah-langkah-card-label">Langkah {index + 1}</span>
@@ -287,7 +395,6 @@ export default function TutorialStep({ stage, playing, onTogglePlayback, onTourP
                                                         {practice && index === 3 ? "Klik node terpilih untuk menambahkannya ke Urutan Sorting." : description}
                                                     </span>
                                                 </span>
-                                                {review && <span className="practice-review-message" role="status">{review.message}</span>}
                                             </span>
                                         </button>
                                     );
@@ -341,22 +448,38 @@ export default function TutorialStep({ stage, playing, onTogglePlayback, onTourP
             <div className="orme-content-right">
                 <div className="urutan-sorting-container">
                     <div className="urutan-sorting-content">
-                        <h1>Urutan Sorting</h1>
-                        <div ref={queueList} className="urutan-sorting-queue" aria-live={practice ? "polite" : undefined} aria-label={frame?.queue.length ? `Urutan Sorting: ${frame.queue.join(", ")}` : "Urutan Sorting kosong"}>
+                        <h1>
+                            <button type="button" className="urutan-sorting-toggle" aria-expanded={queueExpanded} aria-controls={queueId}
+                                onClick={() => setQueueExpanded((expanded) => !expanded)}>
+                                <span>Urutan Sorting</span>
+                                <svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true">
+                                    <path d="m4 6 4 4 4-4" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                                </svg>
+                            </button>
+                        </h1>
+                        <div id={queueId} ref={queueList} className="urutan-sorting-queue" hidden={!queueExpanded} aria-live={practice ? "polite" : undefined} aria-label={frame?.queue.length ? `Urutan Sorting: ${frame.queue.join(", ")}` : "Urutan Sorting kosong"}>
                             {frame?.queue.map((node) => (
                                 <span key={node} className="node-circle tutorial-queue-node" data-queued-by-click={practice ? "" : undefined}><span>{node}</span></span>
                             ))}
                         </div>
                         <div className="tutorial-graph-controls">
                             {helpButtons}
-                            {checkButton}
+                            <button
+                                ref={checkButton}
+                                type="button"
+                                className="chapter-button tutorial-check-button"
+                                disabled={practice?.checkDisabled ?? true}
+                                data-demo-only={!practice || undefined}
+                                aria-haspopup={practice ? "dialog" : undefined}
+                                title={practice ? undefined : "Periksa tersedia di Latihan"}
+                                onClick={practice?.onCheck}
+                            >
+                                Periksa
+                            </button>
                         </div>
                     </div>
                 </div>
                 <div className="graph-container">
-                    <div className="tutorial-notification" role="status" aria-atomic="true" data-visible={notification.visible}>
-                        <span aria-hidden={!notification.visible}>{notification.message}</span>
-                    </div>
                     <GraphViewport practice={Boolean(practice)}>
                         {practice ? practice.graph : <div className="topological-sort-graph-v1">
                             <div className="directed-acyclic-graph-v1">
